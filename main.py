@@ -63,10 +63,10 @@ def _check_plugins() -> int:
 
     if failed:
         for line in failed:
-            print(f"✗ {line}", file=sys.stderr)
+            print(f"[FAIL] {line}", file=sys.stderr)
         return 1
 
-    print(f"✓ {len(REGISTRY)} plugins valid")
+    print(f"[OK] {len(REGISTRY)} plugins valid")
     return 0
 
 
@@ -137,7 +137,7 @@ def main() -> int:
         logger.exception("kAI startup failed")
         return 2
     except KeyboardInterrupt:
-        logger.info("Received KeyboardInterrupt — shutting down")
+        logger.info("Received KeyboardInterrupt - shutting down")
     finally:
         _stop_all(started)
 

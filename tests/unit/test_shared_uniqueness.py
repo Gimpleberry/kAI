@@ -84,9 +84,7 @@ def test_shared_symbols_unique() -> None:
         if clashes:
             for name in sorted(clashes):
                 rel = py_file.relative_to(REPO_ROOT)
-                violations.append(
-                    f"  {rel}: redefines '{name}' (already in shared.__all__)"
-                )
+                violations.append(f"  {rel}: redefines '{name}' (already in shared.__all__)")
 
     if violations:
         msg = (

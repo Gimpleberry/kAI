@@ -27,8 +27,9 @@ def init() -> None:
 def validate_taxonomy(path: str = "config/taxonomy.yaml") -> None:
     """Validate taxonomy YAML against schema."""
     from kai.taxonomy import load_taxonomy
+
     taxonomy = load_taxonomy(path)
-    typer.echo(f"✓ Taxonomy v{taxonomy.version} valid")
+    typer.echo(f"[OK] Taxonomy v{taxonomy.version} valid")
     typer.echo(f"  Attributes: {len(taxonomy.attributes)}")
     typer.echo(f"  Tenets: {len(taxonomy.tenets)}")
     typer.echo(f"  Estimable parameters: {taxonomy.n_estimable_params}")
