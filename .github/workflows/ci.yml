@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Per Tenet 5: fail the build on ANY error. No "warnings only" mode.
+# Per Tenet 3: never run against real data; sandbox/temp DBs only.
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Validate taxonomy
+        run: python -m kai.cli validate-taxonomy
+
+      - name: Run unit tests
+        run: python -m pytest tests/unit -v
+
+      - name: Lifecycle check
+        run: python main.py --check

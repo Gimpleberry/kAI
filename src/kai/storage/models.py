@@ -49,11 +49,15 @@ class Session(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)  # UUID
     created_at: Mapped[datetime]
     updated_at: Mapped[datetime]
-    taxonomy_version: Mapped[str]  # ADR-005: must match for regeneration to be valid
+    # ADR-005: must match for regeneration to be valid
+    taxonomy_version: Mapped[str]
     design_seed: Mapped[int]
-    design_params: Mapped[dict] = mapped_column(JSON)  # snapshot of design_params.yaml at session creation
-    generator_version: Mapped[str]  # ADR-005: version the generator alongside taxonomy
-    status: Mapped[str]  # "in_progress" | "completed" | "abandoned"
+    # Snapshot of design_params.yaml at session creation
+    design_params: Mapped[dict] = mapped_column(JSON)
+    # ADR-005: version the generator alongside taxonomy
+    generator_version: Mapped[str]
+    # "in_progress" | "completed" | "abandoned"
+    status: Mapped[str]
 
     cbc_observations: Mapped[list[CBCObservation]] = relationship(back_populates="session")
     maxdiff_observations: Mapped[list[MaxDiffObs]] = relationship(back_populates="session")

@@ -1,0 +1,270 @@
+═══════════════════════════════════════════════════════
+PROJECT_KNOWLEDGE — kAI
+Current-state architecture reference
+Last updated: 2026-04-26 (v0.2.0)
+═══════════════════════════════════════════════════════
+
+Purpose:
+  Answer "what does this project look like RIGHT NOW?"
+  Distinct from README (operator's manual), DECISIONS (why we chose what
+  we chose), and BACKLOG (what's next). This file is the authoritative
+  snapshot of the as-built architecture at any given point in time.
+
+  Update this file every time the architecture or folder map changes.
+
+
+═══════════════════════════════════════════════════════
+1. PROJECT IDENTITY
+═══════════════════════════════════════════════════════
+
+  Name:         kAI (Python package: kai)
+  Version:      0.2.0
+  Python:       3.12.x specifically (>=3.12,<3.13)
+  Owner:        single-user, solo project
+  Hosting:      local-only on owner's Windows machine
+  Network:      127.0.0.1 binding; no external services at runtime
+  Storage:      SQLite at ./data/kai.db (gitignored)
+
+
+═══════════════════════════════════════════════════════
+2. FOLDER MAP (CURRENT STATE)
+═══════════════════════════════════════════════════════
+
+  C:\dev\kAI\                       <- project root (no cloud sync)
+  │
+  ├── main.py                       Lifecycle entry point
+  ├── plugins.py                    Plugin registry (Tenet 1)
+  ├── pyproject.toml                Pinned deps, project metadata
+  ├── README.md                     Operator's manual (13-section)
+  ├── PROJECT_KNOWLEDGE.txt         This file — current-state reference
+  ├── BACKLOG.md                    Phase-ordered future work
+  ├── CHANGELOG.md                  Versioned change history
+  ├── DECISIONS.md                  Architecture decision records
+  ├── .gitignore                    Hardened against data leaks
+  ├── .gitattributes                Line-ending normalization
+  ├── .env.example                  Config template (no secrets)
+  │
+  ├── config/                       Static configuration
+  │   ├── taxonomy.yaml             Central attribute × level taxonomy
+  │   └── design_params.yaml        Experimental design parameters
+  │
+  ├── src/kai/
+  │   ├── __init__.py               Package version
+  │   ├── shared.py                 SINGLE SOURCE OF TRUTH (Tenet 1)
+  │   ├── plugin_base.py            Plugin protocol
+  │   ├── cli.py                    `kai` CLI commands
+  │   │
+  │   ├── taxonomy/
+  │   │   ├── plugin.py             TaxonomyPlugin lifecycle
+  │   │   ├── schema.py             Pydantic models
+  │   │   └── loader.py             YAML loader
+  │   │
+  │   ├── design/
+  │   │   ├── plugin.py             DesignPlugin lifecycle
+  │   │   ├── cbc_generator.py      CBC design generation (stub)
+  │   │   ├── maxdiff_generator.py  MaxDiff BIBD generation (stub)
+  │   │   └── design_diagnostics.py D-efficiency, level balance (stub)
+  │   │
+  │   ├── estimation/
+  │   │   ├── plugin.py             EstimationPlugin lifecycle
+  │   │   ├── types.py              EstimatedProfile data contract
+  │   │   ├── mnl.py                Multinomial logit (stub)
+  │   │   ├── maxdiff_estimator.py  Rank-ordered logit (stub)
+  │   │   ├── rating_calibrator.py  Anchors latent scale (stub)
+  │   │   └── ensemble.py           Combines CBC + MaxDiff + ratings (stub)
+  │   │
+  │   ├── diagnostics/
+  │   │   ├── consistency.py        Choice-consistency metrics (stub)
+  │   │   ├── convergence.py        MNL optimizer convergence (stub)
+  │   │   ├── stability.py          Bootstrap/LOO/split-half (stub)
+  │   │   └── quality_gate.py       Pass/fail decision (stub)
+  │   │
+  │   ├── storage/
+  │   │   ├── plugin.py             StoragePlugin lifecycle
+  │   │   ├── models.py             SQLAlchemy ORM
+  │   │   ├── repository.py         Repository pattern (stub)
+  │   │   └── migrations/           Alembic (TBD)
+  │   │
+  │   ├── elicitation/
+  │   │   ├── plugin.py             ElicitationPlugin (loads last)
+  │   │   ├── api.py                FastAPI app (stub)
+  │   │   ├── session.py            Questionnaire orchestration (stub)
+  │   │   └── adaptive.py           Adaptive selection (deferred)
+  │   │
+  │   └── profile/
+  │       ├── plugin.py             ProfilePlugin lifecycle
+  │       ├── generator.py          Summary generation (stub)
+  │       ├── exporter.py           Multi-format export (stub)
+  │       └── differ.py             Profile-vs-profile diff (stub)
+  │
+  ├── tests/
+  │   └── unit/
+  │       ├── test_taxonomy_schema.py
+  │       ├── test_taxonomy_loader.py
+  │       ├── test_shared_uniqueness.py    Enforces Tenet 1
+  │       └── test_plugins_registry.py     Enforces plugin protocol
+  │
+  ├── scripts/
+  │   ├── setup.sh                  First-time install (cross-platform)
+  │   ├── validate.sh               10-item Tenet-5 checklist
+  │   ├── pre-commit                Git hook blocking data/secret leaks
+  │   └── install_hooks.sh          Hook installer
+  │
+  ├── frontend/                     (Empty — Phase 4)
+  ├── analysis/                     (Empty — Phase 7)
+  └── data/                         RUNTIME ONLY — gitignored
+
+  .github/                          GitHub-specific automation
+  ├── PULL_REQUEST_TEMPLATE.md
+  ├── ISSUE_TEMPLATE/
+  │   ├── bug_report.md
+  │   ├── feature_request.md
+  │   └── config.yml
+  └── workflows/
+      ├── ci.yml
+      ├── lint.yml
+      └── secret-scan.yml
+
+
+═══════════════════════════════════════════════════════
+3. SHARED.PY — WHAT IT OWNS
+═══════════════════════════════════════════════════════
+
+  Per Tenet 1, src/kai/shared.py is the only place these are defined.
+  The test tests/unit/test_shared_uniqueness.py mechanically enforces
+  this rule — duplicates fail CI.
+
+  PATHS
+    REPO_ROOT, CONFIG_DIR, DATA_DIR, TESTS_DIR, SCRIPTS_DIR
+    TAXONOMY_PATH, DESIGN_PARAMS_PATH, ENV_FILE_PATH
+
+  VERSIONS
+    CBC_GENERATOR_VERSION
+    MAXDIFF_GENERATOR_VERSION
+    SCHEMA_VERSION
+
+  THRESHOLDS
+    MIN_OBS_PARAMS_RATIO
+    QUALITY_GATE_MIN_D_EFFICIENCY
+
+  ERROR TYPES
+    KaiError (base)
+    ConfigError, ValidationError, DataIntegrityError, QualityGateFailure
+
+  CONFIG ACCESSORS
+    load_local_config()        Returns dict of all KAI_* env vars
+    get_config_value(key, default=...)   Single value with loud-fail
+
+
+═══════════════════════════════════════════════════════
+4. PLUGIN REGISTRY (BOOT ORDER)
+═══════════════════════════════════════════════════════
+
+  Defined in plugins.py. Loaded in this order at boot, reversed at shutdown.
+
+  1. StoragePlugin       Database schema + connection
+  2. TaxonomyPlugin      Loads + caches the validated taxonomy
+  3. DesignPlugin        CBC + MaxDiff generation lifecycle
+  4. EstimationPlugin    MNL + ensemble lifecycle
+  5. ProfilePlugin       Profile generation + export lifecycle
+  6. ElicitationPlugin   FastAPI server (last — depends on all others)
+
+  Each plugin implements start() and stop() (Tenet 1). The contract is
+  validated by:
+    - python main.py --check
+    - tests/unit/test_plugins_registry.py
+    - bash scripts/validate.sh (item #4 + #6)
+
+
+═══════════════════════════════════════════════════════
+5. SENSITIVE-CONFIG MAP
+═══════════════════════════════════════════════════════
+
+  Per Tenet 3: nothing sensitive lives in source. The flow is:
+
+  USER MACHINE
+  ├── C:\dev\kAI\.env                  (gitignored, contains KAI_* values)
+  └── C:\dev\kAI\data\kai.db           (gitignored, SQLite, has responses)
+
+  NEVER COMMITTED — enforced by:
+    - .gitignore patterns
+    - scripts/pre-commit (active blocker even if gitignore is bypassed)
+    - .github/workflows/secret-scan.yml (gitleaks on every PR)
+
+
+═══════════════════════════════════════════════════════
+6. ARCHITECTURE RULES (CURRENT)
+═══════════════════════════════════════════════════════
+
+  TENET 1 (SCALABLE)
+    - All cross-cutting symbols live in shared.py
+    - Each feature is a plugin module with start()/stop()
+    - Adding a feature = create module + one line in plugins.py
+    - Layered architecture: STORAGE → REFRESH → API → UI
+
+  TENET 2 (EFFICIENT)
+    - External calls cached with TTL + audit log (when added)
+    - Delta detection before writing snapshots
+    - Heavy startup work deferred to post-boot jobs
+
+  TENET 3 (SAFE)
+    - All secrets via load_local_config() — fail loud if missing
+    - API binds 127.0.0.1 only
+    - .env never committed; pre-commit hook + CI enforce
+
+  TENET 4 (ORGANIZED)
+    - Pinned deps (Python 3.12.x, all libs at exact versions)
+    - CHANGELOG entry for every meaningful change
+    - DECISIONS.md ADR for every architectural choice
+    - Phase-ordered BACKLOG.md
+
+  TENET 5 (PRIORITY QC)
+    - 10-item validation checklist (scripts/validate.sh) before every push
+    - Tests in tests/unit run against sandboxes, never production data
+    - Every bug fix gets a regression test
+
+  TENET 6 (STORAGE)
+    - SQLite for queryable data, JSON for whole-file blobs
+    - Universal columns at top level (id, created_at, updated_at)
+    - Snapshots for time-series KPIs, with delta detection
+    - Schema initialization is idempotent
+    - WAL mode for concurrent reads
+
+
+═══════════════════════════════════════════════════════
+7. CHANGELOG SUMMARY (HEADLINE VERSIONS)
+═══════════════════════════════════════════════════════
+
+  See CHANGELOG.md for full detail.
+
+  v0.2.0  Tenet alignment pass: shared.py, plugin registry, validate.sh,
+          .github/, README rewrite, this file.
+  v0.1.5  Cross-platform setup, Python 3.12 pin (ADR-007).
+  v0.1.4  Renamed preference-engine → kAI (ADR-006).
+  v0.1.3  Design reproducibility from seed (ADR-005); BACKLOG.md added.
+  v0.1.2  Storage policy formalized (ADR-003); pre-commit hook added.
+  v0.1.1  CBC obs:params ratio fixed; HB scope cut.
+  v0.1.0  Initial scaffolding.
+
+
+═══════════════════════════════════════════════════════
+8. VALIDATION CHECKLIST (10 ITEMS)
+═══════════════════════════════════════════════════════
+
+  Run via: bash scripts/validate.sh
+
+  1.  Lint                   ruff clean on src/ and tests/
+  2.  shared.py uniqueness   no symbol redefined outside shared.py
+  3.  Encoding sweep         no non-ASCII in Python source
+  4.  Plugin registry        every entry has start()/stop()
+  5.  Import chain           kai + plugins import without circulars
+  6.  Lifecycle              main.py --check passes
+  7.  Documentation          README/CHANGELOG/DECISIONS/BACKLOG/PROJECT_KNOWLEDGE all present
+  8.  Config valid           kai validate-taxonomy passes
+  9.  Unit tests             pytest tests/unit green
+  10. Integration boot       main.py --boot-order succeeds
+
+
+═══════════════════════════════════════════════════════
+END OF PROJECT_KNOWLEDGE
+═══════════════════════════════════════════════════════

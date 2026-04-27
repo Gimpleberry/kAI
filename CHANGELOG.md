@@ -6,6 +6,77 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.0] — 2026-04-26 — Tenet alignment pass
+
+This release reorganizes the project to fully comply with the
+ARCHITECTURE_TENETS document the owner uploaded as project knowledge.
+Minor version bump because it's a meaningful architectural realignment,
+even though no business logic changed.
+
+### Added
+- ADR-008: documents the decision to adopt the strict plugin pattern.
+- `src/kai/shared.py` — single source of truth for paths, constants,
+  error types, config loading. All other modules import from here.
+- `src/kai/plugin_base.py` — Plugin protocol contract.
+- `plugins.py` at repo root — feature registry, one line per plugin, in
+  boot order.
+- `main.py` at repo root — lifecycle entry point. Boots plugins in registry
+  order, runs until SIGINT/SIGTERM, shuts down in reverse order.
+- Per-feature plugin modules: `kai.storage.plugin`, `kai.taxonomy.plugin`,
+  `kai.design.plugin`, `kai.estimation.plugin`, `kai.profile.plugin`,
+  `kai.elicitation.plugin`. Each exposes a `Plugin` class with
+  `start()`/`stop()`.
+- `tests/unit/test_shared_uniqueness.py` — mechanically enforces Tenet 1's
+  rule that nothing redefines what shared.py owns. Scans every Python file
+  in src/ and tests/, fails CI if any `shared.__all__` name appears outside
+  shared.py.
+- `tests/unit/test_plugins_registry.py` — enforces plugin protocol
+  conformance for every entry in `plugins.REGISTRY`.
+- `scripts/validate.sh` — the 10-item Tenet-5 validation checklist as
+  runnable code. Single command runs lint, uniqueness check, encoding sweep,
+  plugin checks, import chain, lifecycle, doc presence, config validation,
+  unit tests, integration boot. Returns exit 0 only if all pass.
+- `.github/PULL_REQUEST_TEMPLATE.md` — every PR re-affirms the 10-item
+  validation checklist plus risk + rollback plan.
+- `.github/ISSUE_TEMPLATE/bug_report.md` and `feature_request.md` — issue
+  templates. Feature template mirrors BACKLOG.md format so promotion is
+  zero-rewrite.
+- `.github/ISSUE_TEMPLATE/config.yml` — disables blank issues, surfaces
+  links to DECISIONS and BACKLOG.
+- `.github/workflows/ci.yml` — runs unit tests + validate-taxonomy + lifecycle
+  check on Ubuntu and Windows for every push/PR.
+- `.github/workflows/lint.yml` — ruff check + ruff format on every push/PR.
+- `.github/workflows/secret-scan.yml` — gitleaks blocks accidental secret
+  commits at PR time. Combined with the existing local pre-commit hook,
+  secrets must bypass two layers to leak.
+- `PROJECT_KNOWLEDGE.txt` — current-state architecture reference. Distinct
+  from README (operator's manual) and DECISIONS (why we chose what we chose).
+
+### Changed
+- `README.md` rewritten following the 13-section operator's-manual
+  pattern from ARCHITECTURE_TENETS.
+- `BACKLOG.md` restructured to phase-ordered (Phase 0 done, Phases 1–7
+  upcoming), with explicit phase entry/exit criteria and rationale for
+  the ordering.
+- `src/kai/taxonomy/loader.py` and `src/kai/design/cbc_generator.py` now
+  import paths and version constants from `kai.shared` instead of
+  redefining them locally.
+
+### Architectural decisions documented
+- **Strict plugin pattern adopted (ADR-008).** Owner's choice between
+  full strict, hybrid, and skip; owner chose strict to preserve
+  cross-project consistency.
+
+### Migration notes (for future-you reading this)
+- This is the first release where `python main.py` is the canonical way
+  to start the application. The earlier `uvicorn` direct-invocation pattern
+  still works for development with --reload but is no longer the default.
+- The validation script is the new pre-push gate. Run it before every
+  commit to avoid CI failures.
+- If you add a new module, you also add a `plugin.py` next to it and one
+  line in `plugins.py`. There are now no exceptions to this rule.
+
+
 ## [0.1.5] — 2026-04-26 — Cross-platform setup, Python version pin
 
 ### Added

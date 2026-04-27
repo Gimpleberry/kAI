@@ -11,7 +11,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from kai.taxonomy.schema import Attribute, Level, Taxonomy, Tenet
+from kai.taxonomy.schema import Attribute, Level, Taxonomy
 
 
 def _valid_taxonomy_dict() -> dict:
@@ -73,7 +73,9 @@ class TestAttribute:
     def test_rejects_single_level(self) -> None:
         with pytest.raises(ValidationError, match="<2 levels"):
             Attribute(
-                id="x", name="X", description="x",
+                id="x",
+                name="X",
+                description="x",
                 related_tenets=["t"],
                 levels=[Level(id="a", display="A")],
             )
@@ -81,7 +83,9 @@ class TestAttribute:
     def test_rejects_duplicate_level_ids(self) -> None:
         with pytest.raises(ValidationError, match="duplicate level"):
             Attribute(
-                id="x", name="X", description="x",
+                id="x",
+                name="X",
+                description="x",
                 related_tenets=["t"],
                 levels=[
                     Level(id="a", display="A1"),
@@ -104,10 +108,13 @@ class TestTaxonomy:
 
     def test_rejects_orphan_tenet(self) -> None:
         d = _valid_taxonomy_dict()
-        d["tenets"].append({
-            "id": "orphan", "name": "Orphan",
-            "user_definition": "Not used",
-        })
+        d["tenets"].append(
+            {
+                "id": "orphan",
+                "name": "Orphan",
+                "user_definition": "Not used",
+            }
+        )
         with pytest.raises(ValidationError, match="not referenced"):
             Taxonomy.model_validate(d)
 

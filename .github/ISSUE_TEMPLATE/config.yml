@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Architecture decisions
+    url: https://github.com/USER/REPO/blob/main/DECISIONS.md
+    about: Read existing ADRs before proposing architectural changes.
+  - name: Backlog
+    url: https://github.com/USER/REPO/blob/main/BACKLOG.md
+    about: Check whether this is already planned in a phase.

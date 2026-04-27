@@ -10,9 +10,9 @@ from pathlib import Path
 import pytest
 import yaml
 
+from kai.shared import REPO_ROOT
 from kai.taxonomy import load_taxonomy
 
-REPO_ROOT = Path(__file__).parents[2]
 REAL_TAXONOMY = REPO_ROOT / "config" / "taxonomy.yaml"
 
 
@@ -32,7 +32,9 @@ def test_load_from_explicit_path(tmp_path: Path) -> None:
         "version": "test",
         "attributes": [
             {
-                "id": "x", "name": "X", "description": "X",
+                "id": "x",
+                "name": "X",
+                "description": "X",
                 "related_tenets": ["t"],
                 "levels": [
                     {"id": "a", "display": "A"},

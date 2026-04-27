@@ -10,7 +10,7 @@ or biased part-worth estimates regardless of how many tasks you collect.
 DETERMINISM CONTRACT (per ADR-005):
     Given identical (taxonomy, n_tasks, n_alts_per_task, method, seed),
     this function MUST produce byte-identical output across runs and across
-    Python versions ≥ 3.11. We rely on this for design reproducibility:
+    Python versions ≥ 3.12. We rely on this for design reproducibility:
     we store only the seed in the DB and regenerate the design on demand.
 
     Implementations must:
@@ -37,11 +37,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# Per Tenet 1: GENERATOR_VERSION lives in shared.py. We import it as a
+# convenience alias here for callers that already import from this module.
+from kai.shared import CBC_GENERATOR_VERSION as GENERATOR_VERSION  # noqa: F401
 from kai.taxonomy.schema import Taxonomy
-
-# Generator version — bump when changing the algorithm in a way that produces
-# different output for the same seed. Stored on Session rows for compatibility checks.
-GENERATOR_VERSION = "1.0.0"
 
 
 @dataclass(frozen=True)
@@ -84,6 +83,6 @@ def generate_cbc_design(
         1. Generate balanced level frequencies per attribute
         2. Assign levels to alternatives, minimizing within-task duplication
         3. Compute D-efficiency via design matrix determinant
-        4. Reject and regenerate if below min_d_efficiency threshold
+        4. Reject and regenerate if below QUALITY_GATE_MIN_D_EFFICIENCY threshold
     """
     raise NotImplementedError("CBC design generation pending — scaffolding only")

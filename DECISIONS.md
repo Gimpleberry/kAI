@@ -94,6 +94,7 @@ different sharing properties:
 - `.gitignore` patterns prevent accidental staging
 - `pre-commit` hook (in `scripts/`) double-checks no `.db` files are being committed
 - `scripts/setup.sh` creates `data/` directory on first run
+- `.github/workflows/secret-scan.yml` runs gitleaks on every PR (added v0.2.0)
 
 ### Related
 - ADR-004 (DB location)
@@ -188,6 +189,7 @@ This pattern matches established projects: "FastAPI" → `fastapi`,
 Hard. Renaming a Python package after code is written requires updating every
 import statement. Locking this in at scaffolding time is intentional.
 
+---
 
 ## ADR-007: Python 3.12.x specifically (not >=3.11 unbounded)
 
@@ -201,10 +203,6 @@ which has no pre-built wheels for several pinned scientific dependencies
 (numpy 2.1.3, scipy 1.14.1, pandas 2.2.3, etc.). pip would have either
 failed or attempted to compile from source — requiring a full C++ toolchain
 on Windows.
-
-We had two choices:
-1. Loosen the pinned dependencies to "latest" so pip could find compatible versions
-2. Tighten the Python version requirement to one that has wheels for our pins
 
 ### Decision
 Pin to Python 3.12.x specifically: `requires-python = ">=3.12,<3.13"`.
@@ -241,3 +239,82 @@ treated as a non-trivial change because:
 ### Related
 - `pyproject.toml` (`requires-python` field)
 - `scripts/setup.sh` (Python detection logic)
+
+---
+
+## ADR-008: Adopt the ARCHITECTURE_TENETS plugin pattern
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+### Context
+The user uploaded ARCHITECTURE_TENETS.txt as project knowledge. Reviewing
+kAI against it surfaced a meaningful divergence: kAI was structured as a
+"library + FastAPI app" with no central plugin registry, no shared.py
+module, no main.py lifecycle orchestrator. Tenet 1 mandates all three.
+
+The choice was: keep diverging (justified for some project shapes) or
+realign (mandatory if cross-project consistency matters to the owner).
+The owner explicitly chose the strict plugin pattern.
+
+### Decision
+Adopt the full plugin pattern from ARCHITECTURE_TENETS Tenet 1:
+
+1. **`src/kai/shared.py`** is the single source of truth for cross-cutting
+   paths, constants, error types, and config-loading entry points.
+   Mechanically enforced by `tests/unit/test_shared_uniqueness.py`, which
+   scans every Python file in src/ and tests/ and fails CI if any name
+   in `shared.__all__` is redefined elsewhere.
+
+2. **`plugins.py`** at the repo root is the feature registry. One line per
+   plugin, in boot order. Adding a feature = create a `<feature>/plugin.py`
+   module + one line in the registry.
+
+3. **`main.py`** at the repo root is the lifecycle entry point. It imports
+   `REGISTRY` from `plugins.py` and calls `start()` on each in order, then
+   blocks until shutdown signal, then calls `stop()` in reverse order.
+
+4. **Each feature module exposes a `Plugin` class** with `start()` and
+   `stop()` methods. Plugin protocol defined in `src/kai/plugin_base.py`.
+
+5. **Boot order is documented** in `plugins.py`: storage-creating plugins
+   load before consumers, FastAPI server loads last.
+
+### Consequences
+- ✓ Architectural consistency with the owner's other projects (PokeBS pattern)
+- ✓ Adding new features is mechanical: create module, add line, no other
+  files touched
+- ✓ Disabling a feature is one comment-out
+- ✓ Boot order is explicit and reviewable rather than implicit and tangled
+- ✓ Mechanically enforceable: shared.py uniqueness test, plugin protocol test
+- ✗ More files for the same functionality (plugin shells around each module)
+- ✗ Plugin lifecycle methods are mostly nominal at this stage — they exist
+  for the protocol's sake even when there's nothing meaningful to start/stop
+
+### Why we accepted the cost
+The "more files for the same functionality" cost is paid once at scaffolding
+time. The "easier to add features later" benefit compounds with every new
+feature. For a project that will accumulate plugins over phases (CBC, MaxDiff,
+ratings, profile export, frontend, analysis tools, etc.), the trade favors
+the pattern.
+
+### Reversibility
+Medium. Removing plugins.py and merging shared.py back into individual
+modules is mechanical but touches every file. The plugin pattern is sticky
+once code starts depending on the cached singletons it provides (e.g.,
+`get_taxonomy()`).
+
+### Adapted Tenet 5 validation checklist
+The tenet document's 10-item checklist references plugin concepts directly.
+We adopted them as written:
+- Item 4 (plugin registry check): enforced by
+  `tests/unit/test_plugins_registry.py`
+- Item 6 (lifecycle check): enforced by `python main.py --check`
+- All 10 items runnable as one command via `bash scripts/validate.sh`
+
+### Related
+- `plugins.py`, `main.py`, `src/kai/shared.py`, `src/kai/plugin_base.py`
+- All `src/kai/*/plugin.py` files
+- `scripts/validate.sh`
+- `tests/unit/test_shared_uniqueness.py`
+- `tests/unit/test_plugins_registry.py`
