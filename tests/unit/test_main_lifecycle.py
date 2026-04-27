@@ -20,8 +20,14 @@ import main
 class _RecordingPlugin:
     """Test double that records start()/stop() calls into a shared log."""
 
-    def __init__(self, name: str, *, fail_start: bool = False,
-                 fail_stop: bool = False, log: list[str] | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        *,
+        fail_start: bool = False,
+        fail_stop: bool = False,
+        log: list[str] | None = None,
+    ) -> None:
         self.name = name
         self.fail_start = fail_start
         self.fail_stop = fail_stop
@@ -48,8 +54,12 @@ def test_stop_runs_in_reverse_order() -> None:
     main._stop_all(started)
 
     assert log == [
-        "start:A", "start:B", "start:C",  # boot order
-        "stop:C", "stop:B", "stop:A",     # reverse order
+        "start:A",
+        "start:B",
+        "start:C",  # boot order
+        "stop:C",
+        "stop:B",
+        "stop:A",  # reverse order
     ]
 
 
@@ -75,8 +85,11 @@ def test_partial_start_failure_only_stops_started_plugins() -> None:
     started = [plugins[0], plugins[1]]
     main._stop_all(started)
     assert log == [
-        "start:A", "start:B", "start:C",
-        "stop:B", "stop:A",   # only the started plugins, in reverse
+        "start:A",
+        "start:B",
+        "start:C",
+        "stop:B",
+        "stop:A",  # only the started plugins, in reverse
     ]
 
 

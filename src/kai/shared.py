@@ -414,8 +414,7 @@ def setup_rotating_logger(
     logger.setLevel(level)
 
     # Idempotency: don't add the same handler twice across plugin restarts
-    handler_keys = {(type(h).__name__, getattr(h, "baseFilename", None))
-                    for h in logger.handlers}
+    handler_keys = {(type(h).__name__, getattr(h, "baseFilename", None)) for h in logger.handlers}
 
     target = log_file or (LOGS_DIR / f"{name}.log")
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -425,20 +424,24 @@ def setup_rotating_logger(
         fh = logging.handlers.RotatingFileHandler(
             target, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
         )
-        fh.setFormatter(logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%Y-%m-%dT%H:%M:%S",
-        ))
+        fh.setFormatter(
+            logging.Formatter(
+                "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+                datefmt="%Y-%m-%dT%H:%M:%S",
+            )
+        )
         logger.addHandler(fh)
 
     if console:
         ch_key = ("StreamHandler", None)
         if ch_key not in handler_keys:
             ch = logging.StreamHandler()
-            ch.setFormatter(logging.Formatter(
-                "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-                datefmt="%H:%M:%S",
-            ))
+            ch.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+                    datefmt="%H:%M:%S",
+                )
+            )
             logger.addHandler(ch)
 
     return logger

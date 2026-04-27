@@ -115,9 +115,9 @@ class TestOutputContract:
         for task in design.tasks:
             for alt in task.alternatives:
                 for attr_id, level_id in alt.levels.items():
-                    assert level_id in valid[attr_id], (
-                        f"Invalid level {level_id!r} for attribute {attr_id!r}"
-                    )
+                    assert (
+                        level_id in valid[attr_id]
+                    ), f"Invalid level {level_id!r} for attribute {attr_id!r}"
 
     def test_d_efficiency_is_none_in_phase_1_1(self) -> None:
         # Per ADR-005 + the module docstring: diagnostics fills this in 1.2.
@@ -255,23 +255,17 @@ class TestValidation:
     def test_orthogonal_method_raises_not_implemented(self) -> None:
         tax = _two_attribute_taxonomy()
         with pytest.raises(NotImplementedError, match="orthogonal"):
-            generate_cbc_design(
-                tax, n_tasks=4, n_alts_per_task=2, method="orthogonal", seed=1
-            )
+            generate_cbc_design(tax, n_tasks=4, n_alts_per_task=2, method="orthogonal", seed=1)
 
     def test_random_method_raises_not_implemented(self) -> None:
         tax = _two_attribute_taxonomy()
         with pytest.raises(NotImplementedError, match="random"):
-            generate_cbc_design(
-                tax, n_tasks=4, n_alts_per_task=2, method="random", seed=1
-            )
+            generate_cbc_design(tax, n_tasks=4, n_alts_per_task=2, method="random", seed=1)
 
     def test_unknown_method_raises_value_error(self) -> None:
         tax = _two_attribute_taxonomy()
         with pytest.raises(ValueError, match="Unknown method"):
-            generate_cbc_design(
-                tax, n_tasks=4, n_alts_per_task=2, method="bogus", seed=1
-            )
+            generate_cbc_design(tax, n_tasks=4, n_alts_per_task=2, method="bogus", seed=1)
 
     def test_n_tasks_zero_raises(self) -> None:
         tax = _two_attribute_taxonomy()
@@ -324,6 +318,4 @@ class TestProductionConfig:
             n_slots = 20 * 4
             target = n_slots / len(attr.levels)
             max_dev = max(abs(c - target) for c in counts.values()) / target
-            assert max_dev < 0.15, (
-                f"Attribute {attr.id!r} imbalance {max_dev:.3f} >= 0.15 gate"
-            )
+            assert max_dev < 0.15, f"Attribute {attr.id!r} imbalance {max_dev:.3f} >= 0.15 gate"

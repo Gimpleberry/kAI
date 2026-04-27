@@ -24,7 +24,7 @@ class LevelPartWorth:
 
     level_id: str
     point_estimate: float
-    ci_low: float   # 95% CI lower bound
+    ci_low: float  # 95% CI lower bound
     ci_high: float  # 95% CI upper bound
     std_error: float
 
@@ -35,7 +35,7 @@ class AttributeUtility:
 
     attribute_id: str
     levels: list[LevelPartWorth]
-    importance: float           # share of total utility range, in [0,1]
+    importance: float  # share of total utility range, in [0,1]
     importance_ci: tuple[float, float]
 
 

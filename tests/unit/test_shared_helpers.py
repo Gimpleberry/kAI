@@ -26,6 +26,7 @@ from kai.shared import (
 # This context manager closes and removes file handlers after the test, so
 # tempfile.TemporaryDirectory can clean up cleanly.
 
+
 @contextmanager
 def _managed_logger(name: str, **kwargs):
     """Yield a logger configured via setup_rotating_logger; close + detach
@@ -85,7 +86,7 @@ class TestBatchIsolation:
 
         result = batch_with_isolation([1, 2, 3, 4, 5], process)
         assert result.total == 5
-        assert result.ok == 3       # 1, 3, 5
+        assert result.ok == 3  # 1, 3, 5
         assert result.skipped == 2  # 2, 4
         assert result.failed == 0
         assert result.results == [1, 3, 5]
@@ -108,8 +109,12 @@ class TestBatchIsolation:
 
     def test_summary_string(self) -> None:
         result = BatchResult(
-            total=10, ok=8, failed=1, skipped=1,
-            results=[], errors=[],
+            total=10,
+            ok=8,
+            failed=1,
+            skipped=1,
+            results=[],
+            errors=[],
         )
         assert "total=10" in result.summary()
         assert "ok=8" in result.summary()
@@ -153,10 +158,8 @@ class TestMaskSecret:
         '****' + last char even when length is small, we'd leak the
         last char of a 5-char token.
         """
-        for s in ["a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg",
-                  "abcdefgh"]:
-            assert mask_secret(s) == "<masked>", \
-                f"Short value {s!r} leaked: got {mask_secret(s)!r}"
+        for s in ["a", "ab", "abc", "abcd", "abcde", "abcdef", "abcdefg", "abcdefgh"]:
+            assert mask_secret(s) == "<masked>", f"Short value {s!r} leaked: got {mask_secret(s)!r}"
 
 
 # =============================================================================
@@ -198,9 +201,9 @@ class TestSetupRotatingLogger:
                 )
                 n_handlers_second = len(logger2.handlers)
 
-                assert n_handlers_first == n_handlers_second, (
-                    "Calling setup_rotating_logger twice duplicated handlers"
-                )
+                assert (
+                    n_handlers_first == n_handlers_second
+                ), "Calling setup_rotating_logger twice duplicated handlers"
 
     def test_rotation_caps_file_size(self) -> None:
         """Confirm the rotation kicks in at the configured size."""
@@ -219,9 +222,9 @@ class TestSetupRotatingLogger:
                     h.flush()
 
                 assert log_path.exists()
-                assert log_path.stat().st_size < 500, (
-                    f"Log file did not rotate; size={log_path.stat().st_size}"
-                )
+                assert (
+                    log_path.stat().st_size < 500
+                ), f"Log file did not rotate; size={log_path.stat().st_size}"
 
 
 # =============================================================================

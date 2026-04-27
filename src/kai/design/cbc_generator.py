@@ -130,10 +130,7 @@ def generate_cbc_design(
     """
     # ---- Argument validation (loud failures, per Tenet 5) -----------------
     if method not in _KNOWN_METHODS:
-        raise ValueError(
-            f"Unknown method: {method!r}. "
-            f"Known methods: {sorted(_KNOWN_METHODS)}"
-        )
+        raise ValueError(f"Unknown method: {method!r}. " f"Known methods: {sorted(_KNOWN_METHODS)}")
     if method not in _IMPLEMENTED_METHODS:
         raise NotImplementedError(
             f"method={method!r} is recognized but not implemented in v1.1. "
@@ -143,8 +140,7 @@ def generate_cbc_design(
         raise ValueError(f"n_tasks must be >= 1, got {n_tasks}")
     if n_alts_per_task < 2:
         raise ValueError(
-            f"n_alts_per_task must be >= 2 (CBC requires contrast), "
-            f"got {n_alts_per_task}"
+            f"n_alts_per_task must be >= 2 (CBC requires contrast), " f"got {n_alts_per_task}"
         )
 
     # ---- Deterministic setup ----------------------------------------------
@@ -193,8 +189,7 @@ def generate_cbc_design(
             # dict literal in sorted-attr-id order — gives stable insertion
             # order and therefore stable pickle output (Python 3.7+ dicts).
             levels = {
-                attr.id: str(assignments[attr.id][task_idx, alt_idx])
-                for attr in sorted_attrs
+                attr.id: str(assignments[attr.id][task_idx, alt_idx]) for attr in sorted_attrs
             }
             alternatives.append(Alternative(levels=levels))
         tasks.append(ChoiceTask(task_id=task_idx, alternatives=alternatives))

@@ -91,9 +91,7 @@ class Taxonomy(BaseModel):
         for attr in self.attributes:
             unknown = set(attr.related_tenets) - tenet_ids
             if unknown:
-                raise ValueError(
-                    f"Attribute '{attr.id}' references unknown tenets: {unknown}"
-                )
+                raise ValueError(f"Attribute '{attr.id}' references unknown tenets: {unknown}")
 
         # Every tenet should be referenced by at least one attribute (else useless)
         referenced = {t for a in self.attributes for t in a.related_tenets}
