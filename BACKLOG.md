@@ -323,3 +323,39 @@ The phases above are not arbitrary. Specifically:
   before we add complexity. If CBC alone doesn't feel right, MaxDiff won't fix it.
 - Phase 5 before Phase 6: ensemble estimation defines what "the profile" is,
   and export is downstream of that.
+
+### validate.sh: extend item #1 to include ruff format check
+
+**WHAT:** validate.sh item #1 currently runs `ruff check` only.
+CI runs both `ruff check` and `ruff format --check`. Add the latter
+to validate.sh so the local gate matches CI.
+
+**WHY:** Drift between local and CI gates means a 10/10 local pass
+can still fail CI. Caught during Phase 1.1 rollout — surfaced 9 files
+of pre-existing format drift.
+
+### validate.sh: extend item #3 to catch non-ASCII in string literals
+
+**WHAT:** Item #3 currently checks for non-ASCII in Python source but
+appears to miss characters embedded inside string literals (`"\u2713"`,
+`"✓"`, etc.). Extend to scan string contents.
+
+**WHY:** Caught during Phase 1.1 rollout — `cli.py` shipped with a
+literal ✓ that broke `kai validate-taxonomy` on Windows cp1252 consoles.
+Local Linux dev never saw it.
+
+### Sweep remaining non-ASCII chars from docstrings and comments
+
+**WHAT:** ~100 em-dashes and a handful of arrows or inequalities remain
+in docstrings and inline comments across the codebase. Replace with
+ASCII equivalents (regular hyphens, `->`, `>=`).
+
+**WHY:** Conform to Tenet 5 / validate.sh item #3 in spirit. Currently
+latent - these chars never reach a console encoder because they live
+in source-only `__doc__` attributes and comments. But they're a
+tripwire: any future code path that prints a docstring or includes
+one in an error message would fail on Windows cp1252.
+
+**WHY NOT NOW:** Cleaning during Phase 1.1 rollout would have
+scope-crept the PR with 100+ unrelated single-char edits. Captured
+here for a focused doc-cleanup PR.
