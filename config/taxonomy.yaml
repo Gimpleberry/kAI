@@ -1,0 +1,128 @@
+# =============================================================================
+# kAI — Taxonomy
+# =============================================================================
+# This is the central config. Adding/removing/editing attributes here
+# automatically propagates to design generation, elicitation UI, estimation,
+# and profile output. No code changes needed for new attributes.
+#
+# Schema enforced by src/kai/taxonomy/schema.py
+#
+# Conventions:
+#   - Each `attribute` represents one engineering dimension you make tradeoffs on
+#   - Each `level` is a discrete value the attribute can take in a CBC bundle
+#   - 3-4 levels per attribute is the sweet spot (more = harder choices, less precision)
+#   - Levels should be ORDERED meaningfully where possible (CBC can detect non-linearity)
+#   - `description` shows in the UI when respondent hovers/expands
+# =============================================================================
+
+version: "1.0"
+
+attributes:
+  - id: test_coverage
+    name: "Test coverage"
+    description: "Percentage of code paths covered by automated tests before shipping"
+    related_tenets: [priority_qc, organized]
+    levels:
+      - {id: "low",  display: "60% coverage",  numeric: 60}
+      - {id: "med",  display: "80% coverage",  numeric: 80}
+      - {id: "high", display: "95% coverage",  numeric: 95}
+
+  - id: timeline
+    name: "Timeline to ship"
+    description: "How long from start to production deploy"
+    related_tenets: [efficient]
+    levels:
+      - {id: "fast",   display: "2 days",  numeric: 2}
+      - {id: "medium", display: "1 week",  numeric: 7}
+      - {id: "slow",   display: "3 weeks", numeric: 21}
+
+  - id: dep_count
+    name: "Dependency count"
+    description: "Number of external libraries pulled in"
+    related_tenets: [efficient, safe]
+    levels:
+      - {id: "lean",   display: "0 new deps",  numeric: 0}
+      - {id: "modest", display: "3 new deps",  numeric: 3}
+      - {id: "heavy",  display: "10+ new deps", numeric: 10}
+
+  - id: lib_maturity
+    name: "Library maturity"
+    description: "How established are the libraries used"
+    related_tenets: [safe]
+    levels:
+      - {id: "cutting_edge", display: "Cutting-edge (<6mo old)"}
+      - {id: "stable",       display: "Stable (1-2 yrs)"}
+      - {id: "battle_tested", display: "Battle-tested (5+ yrs)"}
+
+  - id: documentation
+    name: "Documentation level"
+    description: "How extensively the code is documented"
+    related_tenets: [organized]
+    levels:
+      - {id: "none",         display: "Code-only, no comments"}
+      - {id: "self_doc",     display: "Self-documenting names + docstrings"}
+      - {id: "heavy",        display: "Heavy comments + external docs"}
+
+  - id: data_storage
+    name: "Data storage strategy"
+    description: "How raw data is captured and retained"
+    related_tenets: [storage]
+    levels:
+      - {id: "aggregated", display: "Aggregated only (no raw)"}
+      - {id: "sampled",    display: "Sampled raw + aggregates"}
+      - {id: "full_raw",   display: "Full raw retention"}
+
+  - id: arch_review
+    name: "Architecture review"
+    description: "Level of formal review before implementation"
+    related_tenets: [scalable, priority_qc]
+    levels:
+      - {id: "skipped",      display: "Skipped — just build"}
+      - {id: "async_review", display: "Async PR review"}
+      - {id: "formal",       display: "Formal design doc + review meeting"}
+
+  - id: refactor_scope
+    name: "Refactor scope when adding features"
+    description: "How much existing code gets cleaned up alongside new work"
+    related_tenets: [refactor_eager, organized]
+    levels:
+      - {id: "none",        display: "Touch only what's needed"}
+      - {id: "adjacent",    display: "Clean adjacent files too"}
+      - {id: "module_wide", display: "Refactor whole module"}
+
+# =============================================================================
+# Tenet definitions (referenced by attributes via `related_tenets`)
+# =============================================================================
+# These are aggregated AFTER part-worths are estimated.
+# Each tenet's importance = sum of related attributes' importances
+# (then re-normalized so tenet importances sum to 1.0).
+# =============================================================================
+
+tenets:
+  - id: scalable
+    name: "Scalable"
+    user_definition: "Architecture should be organized and future-proof in design"
+
+  - id: efficient
+    name: "Efficient"
+    user_definition: "CPU run time can cause strain and result in lost time"
+
+  - id: safe
+    name: "Safe"
+    user_definition: "Cognizant of potential financial or data leakages"
+
+  - id: organized
+    name: "Organized"
+    user_definition: "Version control, diagnostic testing, change documentation"
+
+  - id: priority_qc
+    name: "QC-first"
+    user_definition: "Quality over quantity; adequate QC and testing"
+
+  - id: storage
+    name: "Storage-aware"
+    user_definition: "Efficient and comprehensive storage for analysis, KPIs"
+
+  - id: refactor_eager
+    name: "Refactor-eager"
+    user_definition: "Low tolerance for tech debt accumulation"

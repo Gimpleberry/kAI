@@ -1,0 +1,51 @@
+# =============================================================================
+# Personal data — NEVER commit (per ADR-003)
+# =============================================================================
+# Anything that contains responses, profiles, or session history must stay local.
+# If you find yourself wanting to commit something matching these patterns, stop
+# and read DECISIONS.md → ADR-003 first.
+.env
+*.env.local
+data/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+profile_export*.txt
+profile_export*.json
+profile_export*.md
+session_*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Notebooks
+.ipynb_checkpoints/
+analysis/*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Estimation outputs
+*.netcdf
+arviz_data/

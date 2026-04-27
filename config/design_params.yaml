@@ -1,0 +1,51 @@
+# =============================================================================
+# Experimental design parameters
+# =============================================================================
+# These control the SHAPE of the questionnaire, not the content.
+# Tuning these lets us trade off respondent burden vs. estimation precision.
+# =============================================================================
+
+cbc:
+  # Number of choice tasks shown to respondent
+  # Rule of thumb: n_tasks * n_alts >= 5 * (sum of (levels - 1) across attributes)
+  # With 8 attributes × 3 levels = 16 estimable params → need >=80 obs
+  # 20 tasks × 4 alts = 80 obs → exactly 5:1
+  n_tasks: 20
+  n_alts_per_task: 4
+  include_none_option: false  # "I'd skip both" — adds realism but complicates math
+
+  # Design generation method
+  design_method: "balanced_overlap"  # or "orthogonal", "random"
+
+  # Quality gates — design must pass these to be used
+  min_d_efficiency: 0.85
+  max_level_imbalance: 0.15  # max deviation from uniform level frequency
+
+maxdiff:
+  # MaxDiff for tenet-level prioritization (which TENETS matter most overall)
+  # Items = tenets, not attributes (different abstraction level)
+  n_tasks: 12
+  n_items_per_task: 4
+
+  # Balanced incomplete block design parameters
+  design_method: "bibd"
+
+  # Each item should appear roughly equally often
+  min_item_frequency: 5
+  max_item_frequency: 8
+
+direct_ratings:
+  # Calibration anchors — used to scale part-worths to interpretable units
+  # Asked at the end of CBC + MaxDiff to anchor the latent utility scale
+  scale_min: 1
+  scale_max: 7
+  rate_extreme_levels_only: true  # Only rate worst/best level of each attribute
+
+session:
+  # Resume capability — how long can a session sit incomplete
+  max_session_age_days: 30
+  autosave_every_n_responses: 1  # safer; slight write amplification but tenet #4
+
+  # Order randomization (mitigates ordering bias)
+  randomize_task_order: true
+  randomize_alt_order: true

@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Pre-commit hook — enforce ADR-003 (data stays local, code goes to GitHub)
+# =============================================================================
+# Install with: bash scripts/install_hooks.sh
+#
+# This hook runs before `git commit`. It blocks the commit if it detects any
+# personal-data files being staged, even if .gitignore was bypassed (e.g. via
+# `git add -f`).
+# =============================================================================
+
+set -euo pipefail
+
+# Patterns that should NEVER be committed
+FORBIDDEN_PATTERNS=(
+    '\.db$'
+    '\.sqlite$'
+    '\.sqlite3$'
+    '\.db-journal$'
+    '\.db-wal$'
+    '\.db-shm$'
+    '^\.env$'
+    '^data/'
+    '^backups/'
+    'profile_export.*\.(txt|json|md)$'
+    'session_.*\.json$'
+)
+
+# Get list of staged files (only added/modified, not deleted)
+STAGED=$(git diff --cached --name-only --diff-filter=AM)
+
+if [[ -z "$STAGED" ]]; then
+    exit 0
+fi
+
+VIOLATIONS=()
+while IFS= read -r file; do
+    for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
+        if echo "$file" | grep -qE "$pattern"; then
+            VIOLATIONS+=("  $file  (matches: $pattern)")
+        fi
+    done
+done <<< "$STAGED"
+
+if [[ ${#VIOLATIONS[@]} -gt 0 ]]; then
+    echo ""
+    echo "✗ COMMIT BLOCKED: personal data files detected in staging area"
+    echo ""
+    echo "The following files violate ADR-003 (data stays local, code goes to GitHub):"
+    for v in "${VIOLATIONS[@]}"; do
+        echo "$v"
+    done
+    echo ""
+    echo "If this is intentional (it almost certainly is not):"
+    echo "  1. Read DECISIONS.md → ADR-003 to understand why this exists"
+    echo "  2. Bypass with --no-verify (NOT RECOMMENDED)"
+    echo ""
+    echo "If this is a mistake:"
+    echo "  git restore --staged <file>"
+    echo "  to unstage the file."
+    echo ""
+    exit 1
+fi
+
+exit 0
