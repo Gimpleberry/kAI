@@ -33,19 +33,6 @@ Goal: a working, tested CBC design generator and MNL estimator on synthetic
 data. By the end of this phase, we can hand-run estimation against fake
 respondents and verify the math is correct.
 
-### 1.1 CBC design generator (balanced overlap method)
-
-**WHAT:** Implement `kai.design.cbc_generator.generate_cbc_design()` returning
-a `CBCDesign` with deterministic output for `(taxonomy, params, seed)`.
-
-**WHY:** Foundation for everything downstream. No design ⇒ no questionnaire
-⇒ no responses ⇒ no estimation. Also enforces ADR-005's determinism contract.
-
-**OPEN QUESTIONS:**
-- Pure Python or pyDOE3 for the level-balanced sampling?
-- Tolerance for "near-balanced" vs strict equal-frequency on tasks that
-  don't divide evenly?
-
 ### 1.2 Design diagnostics (D-efficiency, level balance)
 
 **WHAT:** Implement `kai.design.design_diagnostics.diagnose_cbc_design()`
@@ -54,14 +41,6 @@ alternative count, pass/fail vs gates.
 
 **WHY:** Quality gate before any human sees the questionnaire. Bad designs
 waste your time and corrupt estimation.
-
-### 1.3 Determinism test
-
-**WHAT:** Test that asserts byte-identical output for the same inputs across
-runs. Run multiple seeds; pickle each design and compare hashes.
-
-**WHY:** ADR-005 contract. If this test ever fails, the seed-storage policy
-is broken and old sessions can't be reproduced.
 
 ### 1.4 MNL estimator (MLE + bootstrap CIs)
 

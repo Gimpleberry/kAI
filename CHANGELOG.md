@@ -6,6 +6,60 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+**Tags:** Feature
+
+First Phase 1 work: the CBC design generator graduates from stub to
+implementation. Closes BACKLOG items 1.1 and 1.3.
+
+### Added (code)
+- `kai.design.cbc_generator.generate_cbc_design()` — Phase 1.1, balanced-
+  overlap method. Pure-numpy implementation; level-balanced per attribute
+  via a single seeded `numpy.random.default_rng(seed)` consumed in
+  attribute-id-sorted order. Returns `CBCDesign(d_efficiency=None)` —
+  diagnostics fill that field in Phase 1.2.
+- `tests/unit/test_cbc_generator.py` — output contract, level balance
+  (perfect when divisible, near-balanced otherwise with deterministic
+  alphabetical-first remainder distribution), argument validation,
+  determinism (the Phase 1.3 ADR-005 byte-identical-pickle contract,
+  verified across multiple seeds and against a different taxonomy),
+  and a production-size smoke test against `config/taxonomy.yaml` at
+  20 tasks × 4 alts × 8 attributes.
+
+### Changed (code)
+- `cbc_generator.py` no longer raises `NotImplementedError` for
+  `method="balanced_overlap"`. `method="orthogonal"` and
+  `method="random"` remain unimplemented and raise `NotImplementedError`
+  with a message indicating they are recognized but pending Phase 2+.
+  Unknown methods raise `ValueError`.
+
+### Decisions
+- **Balanced-overlap v1 = level-balanced random assignment**, no within-
+  task overlap minimization. Production-size smoke test shows worst-case
+  level imbalance of 2.5% — well under the 15% gate from
+  `design_params.yaml`. Adding overlap-minimization speculation would
+  violate Tenets 2 and 5; the call to add it (or not) is gated on a
+  measured D-efficiency result from Phase 1.2.
+- **Remainder distribution is deterministic by alphabetical id sort**
+  when `n_slots` is not divisible by `n_levels`. Documented in the
+  generator's algorithm docstring.
+- **Generator is a pure function returning `d_efficiency=None`.** Any
+  reject-and-regenerate loop based on a quality threshold lives above
+  the generator (in a session-creation orchestrator), not inside it —
+  matches the stub's "Filled by diagnostics" comment and keeps the
+  generator independently testable.
+
+### Verified
+- Byte-identical pickle output across separate Python processes.
+- Byte-identical pickle output across `PYTHONHASHSEED` variation
+  (hash-order dependence ruled out).
+
+### Closes (BACKLOG)
+- 1.1 CBC design generator (balanced overlap method)
+- 1.3 Determinism test (covered by `TestDeterminism` in the new test file)
+
+
 ## [0.2.1] — 2026-04-26 — Resilience + observability foundations
 
 **Tags:** Feature, Architecture
