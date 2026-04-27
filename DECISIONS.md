@@ -187,3 +187,57 @@ This pattern matches established projects: "FastAPI" → `fastapi`,
 ### Reversibility
 Hard. Renaming a Python package after code is written requires updating every
 import statement. Locking this in at scaffolding time is intentional.
+
+
+## ADR-007: Python 3.12.x specifically (not >=3.11 unbounded)
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+### Context
+Initial scaffolding declared `requires-python = ">=3.11"`. In practice, when
+the user attempted setup on a fresh Windows install they had Python 3.14.4,
+which has no pre-built wheels for several pinned scientific dependencies
+(numpy 2.1.3, scipy 1.14.1, pandas 2.2.3, etc.). pip would have either
+failed or attempted to compile from source — requiring a full C++ toolchain
+on Windows.
+
+We had two choices:
+1. Loosen the pinned dependencies to "latest" so pip could find compatible versions
+2. Tighten the Python version requirement to one that has wheels for our pins
+
+### Decision
+Pin to Python 3.12.x specifically: `requires-python = ">=3.12,<3.13"`.
+
+The setup script searches for Python in this priority order:
+1. `py -3.12` (Windows Python launcher)
+2. `python3.12` (Linux/macOS explicit)
+3. `python3` if and only if it reports Python 3.12.x
+4. `python` if and only if it reports Python 3.12.x
+
+### Consequences
+- ✓ Reproducibility: same Python version + same pinned deps = identical numerical results
+- ✓ Setup works on any platform with Python 3.12 installed, regardless of whether 3.13 or 3.14 is also present
+- ✓ When we eventually upgrade Python, it's a deliberate decision documented in a future ADR — not silent breakage
+- ✗ Users with only 3.13 or 3.14 installed must install 3.12 alongside (one-time friction)
+- ✗ Have to remember to bump this when 3.12 reaches end-of-life (October 2028)
+
+### Why 3.12 specifically (not 3.11 or 3.13)
+- 3.11: Older. Eventually we'd have to upgrade anyway.
+- 3.12: Current LTS-style stable. All pinned scientific libraries publish wheels.
+  Supported until October 2028.
+- 3.13: Released October 2024. Several scientific libraries took 3-6 months to
+  publish wheels. As of mid-2025 most are caught up but some still lag.
+- 3.14: Released October 2025. Same lag problem as 3.13 was at launch.
+
+### Reversibility
+Easy in principle (change one number in `pyproject.toml`), but should be
+treated as a non-trivial change because:
+- All pinned dependency versions need re-validation against the new Python
+- All tests must pass on the new version
+- The CI matrix (when we have one) must be updated
+- A new ADR must document the upgrade decision
+
+### Related
+- `pyproject.toml` (`requires-python` field)
+- `scripts/setup.sh` (Python detection logic)

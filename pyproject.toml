@@ -1,8 +1,10 @@
 [project]
 name = "kai"
-version = "0.1.4"
+version = "0.1.5"
 description = "kAI — conjoint-based preference elicitation engine for engineering tenet quantification"
-requires-python = ">=3.11"
+# Pinned to 3.12.x: 3.13/3.14 lack pre-built wheels for some pinned scientific libs.
+# When we want to upgrade Python, do it deliberately and re-test (see DECISIONS.md → ADR-007).
+requires-python = ">=3.12,<3.13"
 authors = [{name = "kAI"}]
 
 # Pinned for reproducibility (tenet #4: organized; tenet #1: scalable)
@@ -54,7 +56,7 @@ packages = ["src/kai"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM"]
@@ -65,4 +67,4 @@ addopts = "-v --cov=kai --cov-report=term-missing"
 
 [tool.mypy]
 strict = true
-python_version = "3.11"
+python_version = "3.12"

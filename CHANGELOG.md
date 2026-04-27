@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [0.1.5] — 2026-04-26 — Cross-platform setup, Python version pin
+
+### Added
+- ADR-007: Python 3.12.x version pin (rationale + reversibility notes).
+- `setup.sh` now detects platform (Windows Git Bash vs Linux/macOS) and uses
+  the correct venv paths and Python launcher for each.
+- `setup.sh` now searches for Python 3.12 in priority order: `py -3.12` →
+  `python3.12` → `python3` → `python`, verifying version match before use.
+
+### Changed
+- **Python version requirement tightened from `>=3.11` to `>=3.12,<3.13`.**
+  Discovered when a user with Python 3.14.4 attempted setup: our pinned
+  scientific dependencies (numpy 2.1.3, scipy 1.14.1, pandas 2.2.3) lack
+  pre-built wheels for 3.13/3.14, which would force source compilation
+  (requires C++ toolchain on Windows). Pinning to 3.12 means everyone gets
+  identical numerical behavior. See ADR-007.
+- ruff `target-version` and mypy `python_version` updated to 3.12 to match.
+- Setup script error messages on missing Python now show install commands
+  for Windows (winget), macOS (brew), and Linux (apt).
+
+### Caught at setup stage
+- Setup attempt on a Windows machine with Python 3.14 surfaced this issue
+  before any business logic was written. Tenet #5 working as intended again.
+
+
 ## [0.1.4] — 2026-04-26 — Renamed to kAI
 
 ### Changed
