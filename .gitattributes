@@ -1,0 +1,40 @@
+# =============================================================================
+# Line ending normalization
+# =============================================================================
+# Without this, Git on Windows shows "LF will be replaced by CRLF" warnings on
+# every commit. With it, Git uses LF in the repository and converts to the
+# platform-appropriate ending in working copies — silently and consistently.
+# =============================================================================
+
+# Default: auto-detect text files, normalize to LF in repo
+* text=auto eol=lf
+
+# Source code — always LF (works on every platform)
+*.py    text eol=lf
+*.toml  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.sh    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+
+# Git hooks — must be LF even on Windows (they run under bash)
+scripts/pre-commit text eol=lf
+
+# Windows batch files — CRLF (won't run otherwise)
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Binary files — never touch
+*.db    binary
+*.sqlite binary
+*.png   binary
+*.jpg   binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.gz    binary
+*.zip   binary
