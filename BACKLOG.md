@@ -213,6 +213,113 @@ to whichever subset is actually useful.
 
 ---
 
+## Forward-looking tenet patterns (build when triggered)
+
+These patterns from ARCHITECTURE_TENETS are accepted in principle but
+deliberately NOT implemented yet — premature implementation is itself
+an anti-pattern. Each entry says WHEN to revisit.
+
+### Circuit breaker pattern
+
+**Source:** ARCHITECTURE_TENETS "Resilience & fault isolation"
+**Trigger:** First feature that calls an external service repeatedly
+(e.g., a future scraping plugin, a webhook delivery, a third-party
+estimation library that can fail).
+**Pattern:** After N consecutive failures, stop hammering for a
+backoff window. Resume automatically when the window expires.
+**Implementation:** Will live in `kai/shared.py` as a `CircuitBreaker`
+context manager when first needed.
+
+### Adaptive scheduling
+
+**Source:** ARCHITECTURE_TENETS "Resilience & fault isolation"
+**Trigger:** First feature that polls something on a schedule.
+kAI is currently event-driven (questionnaire responses, manual estimation
+triggers); no polling exists.
+**Pattern:** Hot/normal/dead windows with different check frequencies.
+Same code, different schedule.
+
+### Resource pooling
+
+**Source:** ARCHITECTURE_TENETS "Resilience & fault isolation"
+**Trigger:** Profiling shows that creating-and-tearing-down per call
+is a measurable bottleneck. SQLAlchemy's connection pool already
+handles DB connections; we don't have other resources to pool.
+**Pattern:** Reuse expensive resources across operations.
+
+### Multi-signal verification
+
+**Source:** ARCHITECTURE_TENETS "Resilience & fault isolation" /
+"The false-positive lesson"
+**Trigger:** First feature that parses noisy external sources (HTML
+scrapes, vendor APIs that lie). kAI is currently a closed system —
+all inputs come from the user via our own UI.
+**Pattern:** Source-of-truth hierarchy; structured data first, fall
+back to less reliable signals only when authoritative one is absent;
+when in doubt, default to the safer answer.
+
+### Per-feature debug CLI
+
+**Source:** ARCHITECTURE_TENETS "Observability & debug modes"
+**Trigger:** Each feature's first failure-prone code path. Add a
+`python -m kai.<feature> debug` entry that prints raw inputs and
+outputs of the most failure-prone functions.
+**Pattern:** ~30 minutes per module to add; saves hours per incident
+later.
+
+### Tripwire log entries for reachability invariants
+
+**Source:** ARCHITECTURE_TENETS "Observability & debug modes"
+**Trigger:** Per-feature, as branches that should never be reached
+get added.
+**Convention:** Log at WARNING with prefix `TRIPWIRE: ` per ADR-010.
+Investigate every occurrence; the entry is a debug breadcrumb, not
+a metric.
+
+### Auto-mask filter for log lines
+
+**Source:** ARCHITECTURE_TENETS "Observability & debug modes"
+**Trigger:** Repeated bugs where a developer forgot to wrap a value
+with `mask_secret()` and it leaked into a log file.
+**Pattern:** A `logging.Filter` subclass that scans log records for
+patterns matching secret formats and replaces them in-place. Belt
+and suspenders on top of explicit `mask_secret()` calls.
+
+### Action-safety guard utilities
+
+**Source:** ARCHITECTURE_TENETS "Action Safety" / ADR-009
+**Trigger:** First feature that performs an irreversible action.
+At v0.2.1 there is no such feature — kAI's only writes are to the
+local SQLite. When the first irreversible-action surface is added
+(profile export to Claude memory, share-to-Slack, etc.):
+  - Add `validate_action_intent(target, expected_keywords,
+    forbidden_keywords)` to shared.py
+  - Wire the function-failure circuit breaker
+  - Add tests that synthetic forbidden inputs raise ActionSafetyError
+
+### Remove-and-explain pattern enforcement
+
+**Source:** ARCHITECTURE_TENETS "Observability & debug modes"
+**Trigger:** Code review convention; not infrastructure.
+**Pattern:** When removing code because an approach didn't work, leave
+a commented-out block with a one-line WHY. After 12+ months of stability,
+the commented block can be deleted in a refactor.
+**Adoption:** Already documented in `scripts/rollout.sh` step 3 reminder.
+No enforcement automation needed unless we accumulate violations.
+
+### Post-mortem / guardrails-as-code habit
+
+**Source:** ARCHITECTURE_TENETS "Observability & debug modes"
+**Trigger:** First incident or near-miss.
+**Convention:** After any significant incident, write down:
+  - What happened
+  - Immediate cause
+  - Contributing factor
+  - What guardrail (in CODE, not in README) prevents recurrence
+**Storage:** A new `INCIDENTS.md` file at repo root, formatted like
+DECISIONS.md (one entry per incident). Guardrails go into `shared.py`
+or relevant module.
+
 ## Cross-cutting / not-phase-aligned
 
 These cut across phases or apply project-wide.

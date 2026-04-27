@@ -318,3 +318,190 @@ We adopted them as written:
 - `scripts/validate.sh`
 - `tests/unit/test_shared_uniqueness.py`
 - `tests/unit/test_plugins_registry.py`
+
+---
+
+## ADR-009: Action safety — automation prepares, human commits
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+### Context
+The updated ARCHITECTURE_TENETS document expanded Tenet 3's action-safety
+section with a clearer formulation: "the script never makes a decision
+that's expensive to undo." kAI's current code surface has no irreversible
+actions, but several future surfaces could acquire them silently:
+
+- Profile export could write to Claude memory or auto-commit a profile to git
+- Frontend could be wired to "share to Slack" or similar publishing flows
+- A CLI `kai apply-profile` command could mutate user-visible state elsewhere
+- Future scraping integrations (none planned) would qualify
+
+Encoding the principle as an ADR before any of those exist prevents
+violation by accretion.
+
+### Decision
+Adopt the "automation prepares, human commits" pattern as a project
+invariant. Concretely:
+
+1. **Automation is allowed to:** read, compute, validate, log, write to
+   the local DB, generate files locally, prepare drafts, open browsers
+   to a pre-filled state.
+
+2. **Automation is NOT allowed to:** click "send" / "publish" / "buy" /
+   "deploy" / "purchase" / "place order" / anything that mutates state
+   visible outside the local machine, without an explicit per-action
+   confirmation by a human.
+
+3. **Where the line is enforced:** any code that performs an
+   irreversible-by-design action (defined as: an action whose undo
+   requires manual intervention by an external system) MUST:
+   - Validate the intent matches expected positive keywords AND does
+     NOT match dangerous negative keywords
+   - Surface ambiguous cases as errors (raise `ActionSafetyError`),
+     not silent skips
+   - Log the attempt at INFO with the masked target
+   - Implement a circuit breaker: after N consecutive anomalies, stop
+     and surface
+
+4. **The reverse principle:** actions that are CHEAP to undo (write a
+   log line, send a notification to yourself, refresh a cache) can be
+   fully automated. Reserve human attention for actions that matter.
+
+### Consequences
+- ✓ The architecture explicitly carves out a "no irreversible actions"
+  contract. Future code that violates it has to be a deliberate ADR.
+- ✓ `ActionSafetyError` is now in `shared.py` for any future code
+  needing to raise it.
+- ✗ Some convenience features become harder to implement. That's the
+  point. We're trading speed-of-implementation for reduced blast radius.
+
+### Currently in scope (audit)
+At v0.2.1, kAI has zero irreversible-action surfaces. Future surfaces
+that would require this ADR's enforcement, when added, are noted in
+BACKLOG.md as relevant.
+
+### Reversibility
+Easy to relax (allowlist a specific action surface), hard to reinstate
+once relaxed without auditing every relaxation. So: don't relax it.
+
+---
+
+## ADR-010: Structured logging conventions
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+### Context
+The updated tenets added an "Observability & debug modes" section
+specifying:
+  - No `print()` for anything that ships
+  - Per-component log prefixes (`[api]`, `[bestbuy]`, etc.)
+  - Five-level log discipline (DEBUG/INFO/WARNING/ERROR/CRITICAL)
+  - Log rotation at a size limit
+  - Mask secrets inside the helper that does the logging
+  - Tripwire log entries for "events that should never happen"
+
+### Decision
+1. **No `print()` in shipping code.** Use `logging.getLogger("kai.<module>")`
+   exclusively. The lint rule (manual for now, automated in a future ADR)
+   is: any `print(` call in `src/kai/` is a bug.
+
+2. **Logger naming convention.** `kai.<package>.<module>` — e.g.,
+   `kai.elicitation.api`, `kai.estimation.mnl`. This makes
+   `grep '\[kai\.estimation' kai.log` isolate one subsystem.
+
+3. **Log rotation.** Plugins use `setup_rotating_logger()` from
+   `kai.shared` to get an automatically-rotating file handler at
+   `data/logs/<n>.log`. Default 5 MB × 3 backups; configurable per
+   call.
+
+4. **Secret masking.** Anywhere a config value, token, ID, or URL with
+   embedded credentials might end up in a log line, callers wrap it
+   with `mask_secret()` from `kai.shared`. The masking lives inside
+   the helper, not in callers' control flow — but callers must reach
+   for it. A future tooling enhancement is to add a custom log filter
+   that auto-masks values matching secret patterns.
+
+5. **Tripwire convention.** Events that should never happen get logged
+   at WARNING (or higher) with the prefix `TRIPWIRE: ` and enough
+   context to investigate. Examples: CORS-rejected request from
+   unexpected origin, schema_version mismatch on boot, circuit-breaker
+   trip, paths that are "supposed to be unreachable."
+
+### Consequences
+- ✓ Logs become diagnosable rather than ornamental
+- ✓ Secrets stay out of logs by default
+- ✓ Disk-fill is no longer a failure mode
+- ✗ Slightly more boilerplate per module — `setup_rotating_logger()`
+  call in each `Plugin.start()`. Acceptable.
+
+### Migration
+Existing modules in v0.2.0 use `logging.getLogger(...)` correctly but
+do NOT yet call `setup_rotating_logger`. Each plugin's `start()` will
+adopt it as that plugin gains real logic to log. Until then, the basic
+logger format from `main._setup_logging()` is sufficient.
+
+### Reversibility
+Easy.
+
+---
+
+## ADR-011: Versioning scheme and release tags
+
+**Date:** 2026-04-26
+**Status:** Accepted
+
+### Context
+The updated tenets added a "Patch rollout process" section specifying
+a versioning scheme (`major.minor[.patch]`) and a multi-tag taxonomy
+applied to each release. We've been using major.minor informally
+already; this ADR codifies it.
+
+### Decision
+
+**Format:** `major.minor[.patch]`, leading "v" in git tags only
+(`v0.2.1`, not `0.2.1` in pyproject.toml).
+
+**Bump rules:**
+- **MAJOR** — architecture change other plugins must adapt to; storage
+  schema change with no backward-compat shim; removal of a public
+  API/symbol; breaking change. Triggers full re-validation.
+- **MINOR** — new feature/plugin/page; additive API; security hardening
+  that changes behavior; refactor that changes file layout.
+- **PATCH** — bug fix with no observable behavior change; doc-only
+  changes; minor tuning (intervals, retry counts); removing a
+  no-longer-working dep.
+
+**Tags** (one or more per release, declared in CHANGELOG):
+`Major | Feature | Fix | Security | Refactor | Performance |
+Architecture | Scalability`
+
+**Release process:**
+1. Bump version in `pyproject.toml` and `src/kai/__init__.py`
+2. Add CHANGELOG.md entry with version + date + tags + changes
+3. Merge to main
+4. Tag: `git tag -a v0.2.1 -m "description"` then `git push --tags`
+5. (Optional) Create a GitHub Release pulling release notes from the
+   changelog entry
+
+### Tag retroactive assignment for existing versions
+- v0.1.0 — Architecture, Feature (initial scaffold)
+- v0.1.1 — Refactor (CBC ratio + scope cut)
+- v0.1.2 — Security, Architecture (storage policy, pre-commit hook)
+- v0.1.3 — Architecture (design reproducibility, BACKLOG)
+- v0.1.4 — Refactor (rename to kAI)
+- v0.1.5 — Architecture (Python 3.12 pin, cross-platform setup)
+- v0.2.0 — Architecture, Feature (tenet alignment pass)
+- v0.2.1 — Feature, Architecture (resilience helpers, action safety, rollout process)
+
+### Consequences
+- ✓ Future-you can scan CHANGELOG and know at a glance whether an
+  upgrade is risky (Major) or trivial (Patch).
+- ✓ The CI matrix can react to tags — e.g., Major releases trigger
+  the full validation matrix on multiple OSs.
+- ✗ One more thing to remember at release time. Mitigated by
+  `scripts/rollout.sh` step 10 reminding you.
+
+### Reversibility
+Trivial. The tags are advisory metadata.

@@ -6,6 +6,79 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.1] — 2026-04-26 — Resilience + observability foundations
+
+**Tags:** Feature, Architecture
+
+Incorporates the new sections from the updated ARCHITECTURE_TENETS document:
+high-leverage helpers and architectural decisions that affect future code,
+plus deferred items captured cleanly in BACKLOG.
+
+### Added (code)
+- `shared.batch_with_isolation()` + `BatchResult` + `SkipItem` — per-item
+  exception isolation pattern. One bad item never aborts a batch loop.
+  Counts (total/ok/failed/skipped) become the audit trail. Tests in
+  `tests/unit/test_shared_helpers.py`.
+- `shared.mask_secret()` — masks values for safe logging. Returns
+  `<unset>` / `<masked>` / `****<tail>` based on input length. Built-in
+  short-value protection prevents leaks via single-char tails.
+- `shared.setup_rotating_logger()` — configures a logger with rotating
+  file handler at `data/logs/<n>.log` plus optional stderr. Idempotent;
+  safe to call multiple times.
+- `shared.ActionSafetyError` — raised when an irreversible-action guard
+  rejects an attempted action. No callers yet (kAI has no irreversible
+  actions at v0.2.1) — encoded ahead of need per ADR-009.
+- `shared.LOGS_DIR`, `shared.DEFAULT_LOG_MAX_BYTES`,
+  `shared.DEFAULT_LOG_BACKUP_COUNT` — log rotation defaults.
+- `tests/unit/test_main_lifecycle.py` — verifies graceful shutdown
+  contract: stop() runs in reverse boot order, partial-start failures
+  only stop the started subset, individual stop() failures don't
+  prevent later stops.
+- `scripts/rollout.sh` — interactive 11-step rollout workflow per the
+  new "Patch Rollout Process" section. Walks PLAN → BRANCH → IMPLEMENT
+  → SELF-REVIEW → VALIDATE → UPDATE DOCS → COMMIT → PUSH → PR → MERGE
+  → POST-VALIDATE. Honors `--hotfix` (skip PLAN/BRANCH/PR steps but
+  enforces all QC) and `--dry-run` (show steps without prompting).
+
+### Added (docs)
+- ADR-009: Action safety — automation prepares, human commits.
+- ADR-010: Structured logging conventions.
+- ADR-011: Versioning scheme + multi-tag taxonomy. Retroactive tags
+  applied to all prior versions.
+- PROJECT_KNOWLEDGE.txt: new section 9 "Known Issues & Technical Debt
+  Register" (currently empty by design — distinct from BACKLOG).
+- BACKLOG.md: new "Forward-looking tenet patterns" section capturing
+  9 patterns deliberately deferred (circuit breakers, adaptive
+  scheduling, resource pooling, multi-signal verification,
+  per-feature debug CLIs, tripwire conventions, auto-mask filter,
+  action-safety guard utilities, post-mortem habit).
+
+### Changed (docs)
+- PROJECT_KNOWLEDGE.txt section 7 (Changelog summary) now includes
+  multi-tag annotations per ADR-011.
+- PROJECT_KNOWLEDGE.txt section 6 (Architecture rules) updated with
+  pointers to ADRs 009-011 and the new shared.py helpers.
+
+### Why split this from v0.2.0
+v0.2.0 was the "tenet alignment pass" against the original tenet
+document. The owner uploaded an updated version of the tenets shortly
+after, with new sections on resilience, observability, and patch
+rollout. Rather than re-version v0.2.0, this is captured as a patch
+release that incorporates only the items that affect future code or
+encode principles likely to be violated otherwise. Forward-looking
+patterns (circuit breakers, etc.) live in BACKLOG and are built when
+the triggering feature is added.
+
+### Migration notes
+- New helpers in `shared.py` are additive — existing code continues
+  to work unchanged. Use them in new code.
+- The rollout script supersedes the informal "git add / commit / push"
+  flow for any meaningful change. Existing scripts/setup.sh and
+  scripts/validate.sh remain the same.
+- `scripts/rollout.sh` requires the venv to exist (it calls
+  `bash scripts/validate.sh` internally).
+
+
 ## [0.2.0] — 2026-04-26 — Tenet alignment pass
 
 This release reorganizes the project to fully comply with the

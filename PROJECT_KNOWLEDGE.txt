@@ -206,22 +206,31 @@ Purpose:
     - External calls cached with TTL + audit log (when added)
     - Delta detection before writing snapshots
     - Heavy startup work deferred to post-boot jobs
+    - Per-item exception isolation: batch_with_isolation() in shared
+      for any batch where one bad item must not abort the run.
 
   TENET 3 (SAFE)
     - All secrets via load_local_config() — fail loud if missing
     - API binds 127.0.0.1 only
     - .env never committed; pre-commit hook + CI enforce
+    - Action safety enforced per ADR-009: automation prepares,
+      human commits. ActionSafetyError available in shared.py.
+    - Secret-masking via mask_secret() in shared (ADR-010).
 
   TENET 4 (ORGANIZED)
     - Pinned deps (Python 3.12.x, all libs at exact versions)
     - CHANGELOG entry for every meaningful change
     - DECISIONS.md ADR for every architectural choice
     - Phase-ordered BACKLOG.md
+    - Versioning scheme + tag taxonomy per ADR-011.
+    - 11-step rollout via scripts/rollout.sh.
 
   TENET 5 (PRIORITY QC)
     - 10-item validation checklist (scripts/validate.sh) before every push
     - Tests in tests/unit run against sandboxes, never production data
     - Every bug fix gets a regression test
+    - Structured logging with rotation per ADR-010
+      (setup_rotating_logger in shared).
 
   TENET 6 (STORAGE)
     - SQLite for queryable data, JSON for whole-file blobs
@@ -235,17 +244,25 @@ Purpose:
 7. CHANGELOG SUMMARY (HEADLINE VERSIONS)
 ═══════════════════════════════════════════════════════
 
-  See CHANGELOG.md for full detail.
+  See CHANGELOG.md for full detail. Tag taxonomy per ADR-011.
 
+  v0.2.1  Resilience + observability helpers in shared.py; ADRs 009-011
+          (action safety, structured logging, versioning); rollout.sh.
+          Tags: Feature, Architecture.
   v0.2.0  Tenet alignment pass: shared.py, plugin registry, validate.sh,
-          .github/, README rewrite, this file.
+          .github/, README rewrite, PROJECT_KNOWLEDGE. Tags: Major, Architecture.
   v0.1.5  Cross-platform setup, Python 3.12 pin (ADR-007).
+          Tags: Architecture.
   v0.1.4  Renamed preference-engine → kAI (ADR-006).
+          Tags: Refactor.
   v0.1.3  Design reproducibility from seed (ADR-005); BACKLOG.md added.
+          Tags: Architecture.
   v0.1.2  Storage policy formalized (ADR-003); pre-commit hook added.
+          Tags: Security, Architecture.
   v0.1.1  CBC obs:params ratio fixed; HB scope cut.
+          Tags: Refactor.
   v0.1.0  Initial scaffolding.
-
+          Tags: Architecture, Feature.
 
 ═══════════════════════════════════════════════════════
 8. VALIDATION CHECKLIST (10 ITEMS)
@@ -264,6 +281,32 @@ Purpose:
   9.  Unit tests             pytest tests/unit green
   10. Integration boot       main.py --boot-order succeeds
 
+
+═══════════════════════════════════════════════════════
+9. KNOWN ISSUES & TECHNICAL DEBT REGISTER
+═══════════════════════════════════════════════════════
+
+  Per ARCHITECTURE_TENETS doc-distribution: this register lists
+  acknowledged-but-unfixed bugs and known limitations, each with its
+  current workaround. Distinct from BACKLOG.md (which is forward-looking
+  new work). Items move FROM here INTO BACKLOG when scheduled for a fix.
+
+  When adding an entry: state the SYMPTOM, the WORKAROUND if any, and
+  the CONDITIONS under which it would matter enough to fix.
+
+
+  CURRENTLY EMPTY — no acknowledged debt as of v0.2.1.
+
+  This is a deliberate state, not an oversight. Document any debt the
+  moment it's introduced. Examples of what would go here when it arises:
+    - "Plugin Y currently uses module-level state instead of a class
+       attribute; refactor pending Phase N. Workaround: don't run two
+       Plugin Y instances simultaneously (we don't anyway)."
+    - "MNL bootstrap is single-threaded; takes ~30s for 500 iterations.
+       Acceptable now; revisit if iteration count grows past 2000."
+    - "FastAPI app does not yet bind on Python 3.13 due to <library>
+       incompatibility. Workaround: stay on 3.12 (already required by
+       ADR-007)."
 
 ═══════════════════════════════════════════════════════
 END OF PROJECT_KNOWLEDGE
