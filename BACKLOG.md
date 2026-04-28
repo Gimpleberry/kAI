@@ -33,14 +33,43 @@ Goal: a working, tested CBC design generator and MNL estimator on synthetic
 data. By the end of this phase, we can hand-run estimation against fake
 respondents and verify the math is correct.
 
-### 1.2 Design diagnostics (D-efficiency, level balance)
+### 1.1.5 Within-task overlap minimization (swap-based D-efficiency)
 
-**WHAT:** Implement `kai.design.design_diagnostics.diagnose_cbc_design()`
-returning a `DesignReport` with D-efficiency, level frequencies, dominated
-alternative count, pass/fail vs gates.
+**WHAT:** Extend `kai.design.cbc_generator.generate_cbc_design()` for
+`method="balanced_overlap"` to perform swap-based D-efficiency optimization
+on top of the level-balanced sampling 1.1 already does.
 
-**WHY:** Quality gate before any human sees the questionnaire. Bad designs
-waste your time and corrupt estimation.
+Algorithm sketch: starting from the 1.1 level-balanced design, iterate up
+to N times. In each iteration: pick a random pair of alternatives (within
+the same task or across tasks), try swapping a single attribute's level
+between them, accept the swap iff D-efficiency improves AND the swap
+doesn't break level balance per attribute. Stop when no improving swap
+is found in M consecutive attempts.
+
+Must remain deterministic given the same seed.
+
+**WHY:** Phase 1.2 calibration showed our 1.1 generator produces D-eff
+~0.38 at production scale, statistically indistinguishable from pure
+random sampling. The 0.85 quality gate is calibrated against full
+Sawtooth-style balanced overlap which includes this swap step. Until
+1.1.5 ships, the production design fails its own quality gate.
+
+**TARGET:** Production D-eff >= 0.85 on `config/taxonomy.yaml` at
+20 tasks x 4 alts. When the target is met, the sentinel test in
+`tests/unit/test_design_diagnostics.py`
+(`test_production_design_intentionally_fails_d_eff_gate`) flips its
+assertion to expect `passes_gates=True`.
+
+**PRIORITY:** Highest remaining Phase 1 work. Should ship before 1.4
+(MNL estimator) so we estimate against a design that earns its quality
+gate.
+
+**OPEN QUESTIONS:**
+- Greedy vs simulated annealing? Greedy is simpler and likely sufficient
+  at our scale; SA only matters if greedy gets stuck in local minima.
+  Default greedy unless calibration shows otherwise.
+- Iteration cap: probably 1000-10000 swaps; tune based on D-eff
+  stability across seeds.
 
 ### 1.4 MNL estimator (MLE + bootstrap CIs)
 

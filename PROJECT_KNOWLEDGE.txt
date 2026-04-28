@@ -61,9 +61,9 @@ Purpose:
   │   │
   │   ├── design/
   │   │   ├── plugin.py             DesignPlugin lifecycle
-  │   │   ├── cbc_generator.py      CBC design generation (stub)
+  │   │   ├── cbc_generator.py      CBC design generation
   │   │   ├── maxdiff_generator.py  MaxDiff BIBD generation (stub)
-  │   │   └── design_diagnostics.py D-efficiency, level balance (stub)
+  │   │   └── design_diagnostics.py D-efficiency, level balance
   │   │
   │   ├── estimation/
   │   │   ├── plugin.py             EstimationPlugin lifecycle
@@ -146,6 +146,7 @@ Purpose:
   THRESHOLDS
     MIN_OBS_PARAMS_RATIO
     QUALITY_GATE_MIN_D_EFFICIENCY
+    QUALITY_GATE_MAX_LEVEL_IMBALANCE
 
   ERROR TYPES
     KaiError (base)

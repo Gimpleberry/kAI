@@ -85,6 +85,13 @@ estimation. Validated at design generation and again at estimation entry."""
 QUALITY_GATE_MIN_D_EFFICIENCY: float = 0.85
 """Minimum D-efficiency for a CBC design to pass quality gates."""
 
+QUALITY_GATE_MAX_LEVEL_IMBALANCE: float = 0.15
+"""Maximum permitted per-level imbalance in a CBC design, expressed as
+abs(observed_freq * n_levels - 1). 0.0 means perfectly uniform; 1.0
+means a level is missing entirely or appears at twice its expected
+rate. Mirrors the value in design_params.yaml; promoted here for
+cross-module access (diagnostics, future orchestrator) per Tenet 1."""
+
 DEFAULT_LOG_MAX_BYTES: int = 5 * 1024 * 1024  # 5 MB per file
 DEFAULT_LOG_BACKUP_COUNT: int = 3
 """Log rotation defaults — per the tenet: 'Disk-fill is a real failure mode
@@ -472,6 +479,7 @@ __all__ = [
     # Thresholds + log defaults
     "MIN_OBS_PARAMS_RATIO",
     "QUALITY_GATE_MIN_D_EFFICIENCY",
+    "QUALITY_GATE_MAX_LEVEL_IMBALANCE",
     "DEFAULT_LOG_MAX_BYTES",
     "DEFAULT_LOG_BACKUP_COUNT",
     # Errors
