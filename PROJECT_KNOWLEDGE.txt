@@ -1,7 +1,7 @@
 ═══════════════════════════════════════════════════════
 PROJECT_KNOWLEDGE — kAI
 Current-state architecture reference
-Last updated: 2026-04-26 (v0.2.0)
+Last updated: 2026-04-27 (post Phase 1.1 + 1.2)
 ═══════════════════════════════════════════════════════
 
 Purpose:
@@ -308,6 +308,26 @@ Purpose:
     - "FastAPI app does not yet bind on Python 3.13 due to <library>
        incompatibility. Workaround: stay on 3.12 (already required by
        ADR-007)."
+
+  ITEM 3 (functional): Phase 1.1 generator falls below D-efficiency gate
+    Symptom:    diagnose_cbc_design() reports D-eff ~0.38 on production
+                config (20 tasks x 4 alts x 8 attrs x 3 levels). Gate
+                threshold is 0.85. passes_gates returns False.
+    Cause:      Phase 1.1 implements level-balanced independent shuffles
+                only. Calibration shows this is statistically
+                indistinguishable from pure random sampling. The 0.85
+                gate is calibrated against full Sawtooth balanced overlap
+                which uses swap-based D-eff optimization.
+    Workaround: Sentinel test in tests/unit/test_design_diagnostics.py
+                (test_production_design_intentionally_fails_d_eff_gate)
+                asserts the failure with a docstring explaining the path
+                forward. Estimation still works at D-eff 0.38 (wider CIs,
+                not wrong answers), so the intermediate state is survivable.
+    Fix cost:   BACKLOG item 1.1.5 - swap-based optimization on top of
+                level-balanced sampling. Should land before Phase 1.4
+                (MNL estimator).
+    Priority:   High - should ship before MNL estimation builds on top
+                of the current design.
 
 ═══════════════════════════════════════════════════════
 END OF PROJECT_KNOWLEDGE
