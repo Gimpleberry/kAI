@@ -79,11 +79,17 @@ def _orthogonal_2x2_taxonomy() -> Taxonomy:
         tenets=[Tenet(id="t", name="T", user_definition="T")],
         attributes=[
             Attribute(
-                id="x", name="X", description="x", related_tenets=["t"],
+                id="x",
+                name="X",
+                description="x",
+                related_tenets=["t"],
                 levels=[Level(id="aa", display="A"), Level(id="bb", display="B")],
             ),
             Attribute(
-                id="y", name="Y", description="x", related_tenets=["t"],
+                id="y",
+                name="Y",
+                description="x",
+                related_tenets=["t"],
                 levels=[Level(id="aa", display="A"), Level(id="bb", display="B")],
             ),
         ],
@@ -99,8 +105,7 @@ def _make_design(tasks_specs: list[list[dict[str, str]]]) -> CBCDesign:
         )
         for i, task_alts in enumerate(tasks_specs)
     ]
-    return CBCDesign(tasks=tasks, method="balanced_overlap", seed=0,
-                     d_efficiency=None)
+    return CBCDesign(tasks=tasks, method="balanced_overlap", seed=0, d_efficiency=None)
 
 
 # ---------------------------------------------------------------------------
@@ -151,9 +156,9 @@ class TestLevelBalance:
         design = generate_cbc_design(tax, n_tasks=10, n_alts_per_task=4, seed=1)
         report = diagnose_cbc_design(design, tax)
         for attr_id, freqs in report.level_balance.items():
-            assert abs(sum(freqs.values()) - 1.0) < 1e-10, (
-                f"Attribute {attr_id!r} frequencies sum to {sum(freqs.values())}"
-            )
+            assert (
+                abs(sum(freqs.values()) - 1.0) < 1e-10
+            ), f"Attribute {attr_id!r} frequencies sum to {sum(freqs.values())}"
 
     def test_two_level_attribute_perfectly_balanced(self) -> None:
         # 10 tasks * 4 alts = 40 slots / 2 levels = 20 each => freq 0.5
@@ -166,10 +171,12 @@ class TestLevelBalance:
     def test_imbalance_zero_when_perfectly_uniform(self) -> None:
         # Build by hand: attr 'x' (2 levels) with exactly 50/50 split.
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
-            [{"x": "aa", "y": "aa"}, {"x": "bb", "y": "bb"}],
-            [{"x": "aa", "y": "bb"}, {"x": "bb", "y": "aa"}],
-        ])
+        design = _make_design(
+            [
+                [{"x": "aa", "y": "aa"}, {"x": "bb", "y": "bb"}],
+                [{"x": "aa", "y": "bb"}, {"x": "bb", "y": "aa"}],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.max_level_imbalance == 0.0
 
@@ -177,10 +184,12 @@ class TestLevelBalance:
         # 3 of 4 alts have x="aa". freq("aa") = 0.75, n_levels=2.
         # imbalance = |0.75 * 2 - 1| = 0.5
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
-            [{"x": "aa", "y": "aa"}, {"x": "aa", "y": "bb"}],
-            [{"x": "aa", "y": "aa"}, {"x": "bb", "y": "bb"}],
-        ])
+        design = _make_design(
+            [
+                [{"x": "aa", "y": "aa"}, {"x": "aa", "y": "bb"}],
+                [{"x": "aa", "y": "aa"}, {"x": "bb", "y": "bb"}],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.max_level_imbalance == pytest.approx(0.5)
 
@@ -198,14 +207,16 @@ class TestDEfficiency:
         so centered X = X. X'X = diag(4,4); det=16; p=2; N=4.
         D-eff = 16^(1/2) / 4 = 1.0."""
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "bb", "y": "bb"},
-                {"x": "bb", "y": "aa"},
-                {"x": "aa", "y": "bb"},
-                {"x": "aa", "y": "aa"},
-            ],
-        ])
+                [
+                    {"x": "bb", "y": "bb"},
+                    {"x": "bb", "y": "aa"},
+                    {"x": "aa", "y": "bb"},
+                    {"x": "aa", "y": "aa"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.d_efficiency == pytest.approx(1.0, abs=1e-10)
 
@@ -215,14 +226,16 @@ class TestDEfficiency:
         x is zero), so D-eff is reported as 0.0 and the gate fails with
         a descriptive message."""
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "bb"},
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "bb"},
-            ],
-        ])
+                [
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "bb"},
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "bb"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.d_efficiency == 0.0
         assert not report.passes_gates
@@ -249,62 +262,70 @@ class TestDEfficiency:
 class TestDuplicateDetection:
     def test_no_duplicates_detected_when_all_distinct(self) -> None:
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "bb"},
-                {"x": "bb", "y": "aa"},
-                {"x": "bb", "y": "bb"},
-            ],
-        ])
+                [
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "bb"},
+                    {"x": "bb", "y": "aa"},
+                    {"x": "bb", "y": "bb"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.n_duplicate_alternatives == 0
 
     def test_all_three_alts_identical_counts_three(self) -> None:
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "aa"},
-            ],
-        ])
+                [
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "aa"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.n_duplicate_alternatives == 3
 
     def test_one_pair_duplicates_counts_two(self) -> None:
         # 3 alts: A, A, B -> the two A's are duplicates; B is not.
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "aa", "y": "bb"},
-                {"x": "aa", "y": "bb"},
-                {"x": "bb", "y": "aa"},
-            ],
-        ])
+                [
+                    {"x": "aa", "y": "bb"},
+                    {"x": "aa", "y": "bb"},
+                    {"x": "bb", "y": "aa"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.n_duplicate_alternatives == 2
 
     def test_duplicates_summed_across_tasks(self) -> None:
         # Task 0: 3 dups. Task 1: 0 dups. Task 2: 2 dups (one pair).
         tax = _orthogonal_2x2_taxonomy()
-        design = _make_design([
+        design = _make_design(
             [
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "aa"},
-                {"x": "aa", "y": "aa"},
-            ],
-            [
-                {"x": "aa", "y": "aa"},
-                {"x": "bb", "y": "aa"},
-                {"x": "aa", "y": "bb"},
-            ],
-            [
-                {"x": "aa", "y": "bb"},
-                {"x": "aa", "y": "bb"},
-                {"x": "bb", "y": "aa"},
-            ],
-        ])
+                [
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "aa"},
+                    {"x": "aa", "y": "aa"},
+                ],
+                [
+                    {"x": "aa", "y": "aa"},
+                    {"x": "bb", "y": "aa"},
+                    {"x": "aa", "y": "bb"},
+                ],
+                [
+                    {"x": "aa", "y": "bb"},
+                    {"x": "aa", "y": "bb"},
+                    {"x": "bb", "y": "aa"},
+                ],
+            ]
+        )
         report = diagnose_cbc_design(design, tax)
         assert report.n_duplicate_alternatives == 5
 
@@ -432,4 +453,3 @@ class TestProductionConfigSentinel:
         design = generate_cbc_design(tax, n_tasks=20, n_alts_per_task=4, seed=42)
         report = diagnose_cbc_design(design, tax)
         assert report.max_level_imbalance <= QUALITY_GATE_MAX_LEVEL_IMBALANCE
-

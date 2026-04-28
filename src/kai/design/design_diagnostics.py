@@ -176,9 +176,7 @@ def diagnose_cbc_design(
     for task in design.tasks:
         # Convert each alt's levels dict to a hashable signature.
         # Sort by attr_id so the signature is order-independent.
-        signatures = [
-            tuple(sorted(alt.levels.items())) for alt in task.alternatives
-        ]
+        signatures = [tuple(sorted(alt.levels.items())) for alt in task.alternatives]
         sig_counts = Counter(signatures)
         for sig in signatures:
             if sig_counts[sig] > 1:
@@ -248,9 +246,7 @@ def diagnose_cbc_design(
     # ---- Apply gates -------------------------------------------------------
     failed_gates: list[str] = []
     if d_efficiency < min_d_efficiency:
-        failed_gates.append(
-            f"d_efficiency {d_efficiency:.4f} < {min_d_efficiency:.4f} minimum"
-        )
+        failed_gates.append(f"d_efficiency {d_efficiency:.4f} < {min_d_efficiency:.4f} minimum")
     if worst_imbalance > max_level_imbalance:
         failed_gates.append(
             f"level imbalance {worst_imbalance:.4f} > "
@@ -266,4 +262,3 @@ def diagnose_cbc_design(
         passes_gates=len(failed_gates) == 0,
         failed_gates=failed_gates,
     )
-
