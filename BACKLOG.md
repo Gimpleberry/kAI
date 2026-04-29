@@ -378,3 +378,73 @@ one in an error message would fail on Windows cp1252.
 **WHY NOT NOW:** Cleaning during Phase 1.1 rollout would have
 scope-crept the PR with 100+ unrelated single-char edits. Captured
 here for a focused doc-cleanup PR.
+
+### Patch-script template: include shared.py in pre-delivery sandbox
+
+**WHAT:** Patch scripts that generate Python files for the kAI tree
+(typically new test files under `tests/unit/`) MUST include a
+representative `src/kai/shared.py` (or at minimum that file's `__all__`
+set) in the pre-delivery sandbox. The sandbox MUST run
+`tests/unit/test_shared_uniqueness.py` against the patched state
+before declaring success.
+
+**WHY:** During the validate.sh / CI lint parity rollout, a generated
+test file locally redefined `REPO_ROOT` (already exported by
+`kai.shared`). The pre-delivery sandbox missed it because the sandbox
+had no `kai.shared` module to detect the duplication. The Tenet 1
+violation only surfaced when the operator ran `bash scripts/validate.sh`,
+requiring a second fix-up patch in the same branch before commit.
+
+The sandbox-fidelity principle: invariant-defining tests
+(`test_shared_uniqueness.py`, `test_plugins_registry.py`) must run
+against the patched state in the patch's own QC, not just on the
+operator's machine. A patch that lands a Tenet 1 violation in the
+operator's working tree is a QC failure even when downstream
+validation catches it.
+
+**PRIORITY:** Apply on the next patch script that generates Python
+files for the kAI tree. Codify in any future `PATCH_SCRIPT_TEMPLATE.md`.
+
+### Patch-script template: ruff format newly-generated Python files
+
+**WHAT:** Any patch script that creates new Python files MUST run
+`ruff format` on those files as a final edit step (before the
+self-verification block). The script's own pre-delivery QC should
+verify `ruff format --check` passes against the patched state.
+
+**WHY:** The validate.sh parity rollout required the operator to run
+`ruff format` manually on a generated test file because the heredoc-
+written code was not born conformant. Friction is small (one extra
+command), but recurring across any patch that touches Python. Baking
+formatting into the patch script means generated code is always landed
+already-formatted, and the operator's pre-validate `ruff format --check`
+becomes purely a tree-wide drift check rather than a patch-output check.
+
+**PRIORITY:** Apply on the next patch script that creates Python files.
+Trivially small to add (one `ruff format <new_file>` invocation as a
+final patch step).
+
+### Generalize parity-test pattern as more CI workflows mirror locally
+
+**WHAT:** `tests/unit/test_validate_script_lint_parity.py` asserts that
+`scripts/validate.sh` and `.github/workflows/lint.yml` stay in sync on
+the ruff invocations. Currently lint is the only CI workflow with a
+local mirror. As more workflows acquire local mirrors (e.g., a future
+type-check workflow mirrored in `validate.sh`), each pair should grow
+its own parametrized `tests/unit/test_<workflow>_local_parity.py`.
+
+**WHY:** The local validation gate must be a strict superset of CI's
+enforcement, or a clean local 10/10 does not imply a clean CI run. The
+parity-test pattern generalizes naturally; one parity test per
+(local check, CI workflow) pair scales until 3-5 pairs exist.
+
+**OPEN QUESTIONS:**
+- At what point (3+ workflows? 5+?) does a single meta-test that walks
+  all `.github/workflows/*.yml` and asserts each step has a local
+  equivalent become preferable to one parity test per pair? Defer until
+  at least a second parity test actually exists. YAGNI.
+
+**PRIORITY:** Triggered by the addition of a second CI workflow with a
+local mirror, NOT by clock time. Today this entry is just a reminder of
+the pattern; no work to do until then.
+
