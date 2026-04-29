@@ -170,10 +170,8 @@ know to be efficient:
 - **Activate venv first**: a fresh terminal loses the venv. If
   `ruff: command not found`, run `source .venv/Scripts/activate`.
 - **Validation gate**: never push without `bash scripts/validate.sh`
-  returning 10/10. NOTE: validate.sh item #1 currently only runs
-  `ruff check`, not `ruff format --check`. Until that gap is fixed
-  (Option A above), CI may still reject what locally looks clean.
-  Run `ruff format src tests` before pushing as a safety belt.
+  returning 10/10. Item #1 now runs both `ruff check` and
+  `ruff format --check`, matching CI exactly.
 - **Branch protection**: `main` cannot be force-pushed. Bug fixes
   that need history rewrites require temporarily relaxing protection.
 - **CRLF warnings**: harmless. `.gitattributes` is configured to

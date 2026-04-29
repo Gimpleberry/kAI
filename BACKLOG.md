@@ -353,16 +353,6 @@ The phases above are not arbitrary. Specifically:
 - Phase 5 before Phase 6: ensemble estimation defines what "the profile" is,
   and export is downstream of that.
 
-### validate.sh: extend item #1 to include ruff format check
-
-**WHAT:** validate.sh item #1 currently runs `ruff check` only.
-CI runs both `ruff check` and `ruff format --check`. Add the latter
-to validate.sh so the local gate matches CI.
-
-**WHY:** Drift between local and CI gates means a 10/10 local pass
-can still fail CI. Caught during Phase 1.1 rollout — surfaced 9 files
-of pre-existing format drift.
-
 ### validate.sh: extend item #3 to catch non-ASCII in string literals
 
 **WHAT:** Item #3 currently checks for non-ASCII in Python source but

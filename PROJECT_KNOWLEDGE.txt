@@ -271,7 +271,7 @@ Purpose:
 
   Run via: bash scripts/validate.sh
 
-  1.  Lint                   ruff clean on src/ and tests/
+  1.  Lint                   ruff check + format --check clean on src/ and tests/
   2.  shared.py uniqueness   no symbol redefined outside shared.py
   3.  Encoding sweep         no non-ASCII in Python source
   4.  Plugin registry        every entry has start()/stop()
