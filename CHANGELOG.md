@@ -8,6 +8,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Tooling
+- Tooling: validate.sh item #1 now runs `ruff format --check` in addition
+  to `ruff check`, matching .github/workflows/lint.yml exactly. Closes the
+  local-vs-CI gate parity gap caught during Phase 1.1 and 1.2 rollouts.
+  New `tests/unit/test_validate_script_lint_parity.py` regression-guards
+  the invariant going forward. Tags: Tooling, QC.
+
+
 **Tags:** Feature
 
 Phase 1.2 ships: design diagnostics. Closes BACKLOG 1.2. Surfaces a new

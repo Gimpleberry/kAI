@@ -26,7 +26,7 @@ and explain why.
 
 <!-- Run `bash scripts/validate.sh` locally. Paste the summary line. -->
 
-- [ ] **1. Lint** — ruff clean on every modified file
+- [ ] **1. Lint** — ruff check + format --check clean on every modified file
 - [ ] **2. shared.py uniqueness** — no symbol duplicated outside shared.py
 - [ ] **3. Encoding sweep** — no non-ASCII in Python source
 - [ ] **4. Plugin registry** — every entry has start()/stop()

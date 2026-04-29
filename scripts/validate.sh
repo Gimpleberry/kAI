@@ -56,9 +56,18 @@ run_check () {
 }
 
 # -----------------------------------------------------------------------------
-# 1. Lint — every modified Python file passes ruff
+# 1. Lint — ruff check AND ruff format --check on src/ and tests/
 # -----------------------------------------------------------------------------
-run_check "1. Lint (ruff)" "$VENV_PYTHON" -m ruff check src tests
+# CI runs both (.github/workflows/lint.yml). This local gate must mirror
+# that exactly. Running only `ruff check` here let format drift ship to
+# CI twice during Phase 1.1 + 1.2 rollouts. Both must pass for item #1.
+# Regression guarded by tests/unit/test_validate_script_lint_parity.py.
+lint_check () {
+    "$VENV_PYTHON" -m ruff check src tests || return 1
+    "$VENV_PYTHON" -m ruff format --check src tests || return 1
+    return 0
+}
+run_check "1. Lint (ruff check + format)" lint_check
 
 # -----------------------------------------------------------------------------
 # 2. Duplication check — no module redefines anything in shared.py
